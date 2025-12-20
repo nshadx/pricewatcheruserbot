@@ -10,7 +10,7 @@ public class ConsumerWorker(
     IServiceProvider serviceProvider
 ) : BackgroundService
 {
-    private readonly SemaphoreSlim _semaphore = new(2);
+    private readonly SemaphoreSlim _semaphore = new(Environment.ProcessorCount);
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -26,6 +26,8 @@ public class ConsumerWorker(
 
                 async Task CallHandler(WorkerItem workerItem)
                 {
+                    await Task.Yield();
+                    
                     try
                     {
                         await HandleWorkerItem(workerItem);
