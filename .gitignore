@@ -3,3 +3,5 @@ obj/
 /packages/
 .idea/
 *.db
+*.db-shm
+*.db-wal

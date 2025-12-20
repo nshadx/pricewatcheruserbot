@@ -6,21 +6,23 @@ namespace pricewatcheruserbot.Commands;
 
 public class AddCommand
 {
-    public string Url { get; set; } = null!;
+    public int MessageId { get; set; }
+    public Uri Url { get; set; } = null!;
     
-    public static AddCommand Parse(string command)
+    public static AddCommand Parse(string command, int messageId)
     {
         var args = command["/add".Length..];
         var urlString = args.Trim();
 
-        if (!Uri.IsWellFormedUriString(urlString, UriKind.Absolute))
+        if (!Uri.TryCreate(urlString, UriKind.Absolute, out var url))
         {
             throw new ArgumentException($"Unknown url format: {urlString}");
         }
         
         return new()
         {
-            Url = urlString
+            MessageId = messageId,
+            Url = url
         };
     }
 
@@ -62,6 +64,11 @@ public class AddCommand
                     message: text
                 );
             }
+
+            await client.DeleteMessages(
+                peer: new InputPeerSelf(),
+                command.MessageId
+            );
         }
     }
 }

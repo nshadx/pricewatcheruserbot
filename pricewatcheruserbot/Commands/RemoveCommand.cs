@@ -6,9 +6,10 @@ namespace pricewatcheruserbot.Commands;
 
 public class RemoveCommand
 {
+    public int MessageId { get; set; }
     public int Order { get; set; }
     
-    public static RemoveCommand Parse(string command)
+    public static RemoveCommand Parse(string command, int messageId)
     {
         var args = command["/rem".Length..];
         var orderString = args.Trim();
@@ -20,6 +21,7 @@ public class RemoveCommand
 
         return new()
         {
+            MessageId = messageId,
             Order = order
         };
     }
@@ -63,6 +65,11 @@ public class RemoveCommand
                     message: text
                 );
             }
+            
+            await client.DeleteMessages(
+                peer: new InputPeerSelf(),
+                command.MessageId
+            );
         }
     }
 }

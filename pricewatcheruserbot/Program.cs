@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using pricewatcheruserbot;
 using pricewatcheruserbot.Commands;
 using pricewatcheruserbot.Configuration;
+using pricewatcheruserbot.Scrappers;
 using TL;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -39,10 +40,14 @@ builder.Services.AddDbContext<AppDbContext>(x =>
     
     x.UseSqlite(connectionString);
 });
+builder.Services.AddMemoryCache();
+
 builder.Services.AddScoped<AddCommand.Handler>();
 builder.Services.AddScoped<ListCommand.Handler>();
 builder.Services.AddScoped<RemoveCommand.Handler>();
+
 builder.Services.AddSingleton<BrowserService>();
+builder.Services.AddSingleton<OzonScrapper>();
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();

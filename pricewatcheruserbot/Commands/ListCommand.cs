@@ -6,9 +6,11 @@ namespace pricewatcheruserbot.Commands;
 
 public class ListCommand
 {
-    public static ListCommand Parse(string command)
+    public int MessageId { get; set; }
+    
+    public static ListCommand Parse(string command, int messageId)
     {
-        return new();
+        return new() { MessageId = messageId };
     }
     
     public class Handler(
@@ -33,9 +35,25 @@ public class ListCommand
                 TelegramId = message.id,
                 Type = MessageType.LIST,
             };
+            var otherMessages = dbContext.SentMessages
+                .Where(x => x.TelegramId != message.id)
+                .AsAsyncEnumerable();
+            await foreach (var otherMessage in otherMessages)
+            {
+                await client.DeleteMessages(
+                    peer: new InputPeerSelf(),
+                    otherMessage.TelegramId
+                );
+                dbContext.SentMessages.Remove(otherMessage);
+            }
             
             await dbContext.SentMessages.AddAsync(sentMessage);
             await dbContext.SaveChangesAsync();
+            
+            await client.DeleteMessages(
+                peer: new InputPeerSelf(),
+                command.MessageId
+            );
         }
     }
 }
