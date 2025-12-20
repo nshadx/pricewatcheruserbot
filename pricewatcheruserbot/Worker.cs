@@ -9,6 +9,7 @@ public class Worker(
     WTelegram.Client client
 ) : BackgroundService
 {
+    private static readonly TimeSpan _delay = TimeSpan.FromSeconds(5);
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -24,7 +25,7 @@ public class Worker(
                 {
                     var price = 0d;
                     
-                    if (workerItem.Url.Host == "ozon.ru")
+                    if (workerItem.Url.Host == "ozon.ru" || workerItem.Url.Host == "www.ozon.ru")
                     {
                         var ozonScrapper = scope.ServiceProvider.GetRequiredService<OzonScrapper>();
                         price = await ozonScrapper.GetPrice(workerItem.Url);
@@ -48,7 +49,7 @@ public class Worker(
                 }
             }
             
-            await Task.Delay(1000, stoppingToken);
+            await Task.Delay(_delay, stoppingToken);
         }
     }
 }

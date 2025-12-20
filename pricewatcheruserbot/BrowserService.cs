@@ -20,7 +20,7 @@ public class BrowserService
         if (_browser is null)
         {
             var instance = await Playwright.CreateAsync();
-            _browser = await instance.Chromium.LaunchAsync();
+            _browser = await instance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions() { Headless = false, Args = ["--disable-blink-features=AutomationControlled"] });
         }
     }
 }
