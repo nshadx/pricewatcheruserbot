@@ -2,7 +2,7 @@
 
 namespace pricewatcheruserbot.Scrappers;
 
-public class OzonScrapper(BrowserService browserService)
+public class OzonScrapper(BrowserService browserService) : IScrapper
 {
     public async Task<double> GetPrice(Uri url)
     {

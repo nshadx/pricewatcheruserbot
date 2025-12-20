@@ -1,10 +1,13 @@
+using System.Threading.Channels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using pricewatcheruserbot;
 using pricewatcheruserbot.Commands;
 using pricewatcheruserbot.Configuration;
+using pricewatcheruserbot.Entities;
 using pricewatcheruserbot.Scrappers;
 using TL;
+using Channel = System.Threading.Channels.Channel;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -48,7 +51,10 @@ builder.Services.AddScoped<RemoveCommand.Handler>();
 
 builder.Services.AddSingleton<BrowserService>();
 builder.Services.AddSingleton<OzonScrapper>();
-builder.Services.AddHostedService<Worker>();
+builder.Services.AddSingleton<ScrapperFactory>();
+builder.Services.AddSingleton(Channel.CreateBounded<WorkerItem>(1024));
+builder.Services.AddHostedService<ProducerWorker>();
+builder.Services.AddHostedService<ConsumerWorker>();
 
 var host = builder.Build();
 
