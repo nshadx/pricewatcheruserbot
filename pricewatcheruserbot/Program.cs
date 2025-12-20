@@ -1,12 +1,14 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using pricewatcheruserbot;
+using pricewatcheruserbot.Commands;
 using pricewatcheruserbot.Configuration;
 using TL;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.Configure<BotCredentials>(builder.Configuration.GetRequiredSection(nameof(BotCredentials)));
-builder.Services.AddSingleton<UpdateRouter>();
+builder.Services.AddSingleton<UpdateHandler>();
 builder.Services.AddSingleton(provider =>
 {
     var botCredentials = provider.GetRequiredService<IOptions<BotCredentials>>().Value;
@@ -31,14 +33,32 @@ builder.Services.AddSingleton(provider =>
     return client;
 });
 
+builder.Services.AddDbContext<AppDbContext>(x =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("DbConnection");
+    
+    x.UseSqlite(connectionString);
+});
+builder.Services.AddScoped<AddCommand.Handler>();
+builder.Services.AddScoped<ListCommand.Handler>();
+builder.Services.AddScoped<RemoveCommand.Handler>();
+builder.Services.AddSingleton<BrowserService>();
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();
 
 var client = host.Services.GetRequiredService<WTelegram.Client>();
-var updateRouter = host.Services.GetRequiredService<UpdateRouter>();
+var updateRouter = host.Services.GetRequiredService<UpdateHandler>();
 
 _ = await client.LoginUserIfNeeded();
 _ = client.WithUpdateManager(updateRouter.Handle);
+
+await using (var scope = host.Services.CreateAsyncScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    
+    await dbContext.Database.EnsureDeletedAsync();
+    await dbContext.Database.EnsureCreatedAsync();
+}
 
 await host.RunAsync();
