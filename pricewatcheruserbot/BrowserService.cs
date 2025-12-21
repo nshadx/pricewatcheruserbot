@@ -3,7 +3,7 @@ using Microsoft.Playwright;
 
 namespace pricewatcheruserbot;
 
-public class BrowserService
+public class BrowserService : IAsyncDisposable
 {
     private IBrowserContext? _browserContext;
 
@@ -23,6 +23,14 @@ public class BrowserService
             var browser = await instance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions() { Headless = false, Args = ["--disable-blink-features=AutomationControlled", "--start-minimized"] });
 
             _browserContext = await browser.NewContextAsync();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_browserContext != null)
+        {
+            await _browserContext.DisposeAsync();
         }
     }
 }
