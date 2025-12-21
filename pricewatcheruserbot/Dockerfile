@@ -1,5 +1,4 @@
-﻿FROM mcr.microsoft.com/dotnet/runtime:10.0 AS base
-USER $APP_UID
+﻿FROM mcr.microsoft.com/dotnet/sdk:10.0 AS base
 WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
@@ -14,8 +13,15 @@ RUN dotnet build "pricewatcheruserbot.csproj" -c $BUILD_CONFIGURATION -o /app/bu
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "pricewatcheruserbot.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+WORKDIR /app/publish
+COPY --from=build /app/build/playwright.ps1 ./
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "pricewatcheruserbot.dll"]
+RUN pwsh ./playwright.ps1 install chromium
+RUN pwsh ./playwright.ps1 install-deps chromium
+RUN apt-get update
+RUN apt-get install xvfb -y
+RUN apt-get install xauth -y
+CMD ["/bin/sh", "-c", "/usr/bin/xvfb-run --server-args='-screen 0, 1920x1080x24' dotnet pricewatcheruserbot.dll", ""]
