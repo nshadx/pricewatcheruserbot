@@ -10,34 +10,22 @@ public class ConsumerWorker(
     IServiceProvider serviceProvider
 ) : BackgroundService
 {
-    private readonly SemaphoreSlim _semaphore = new(Environment.ProcessorCount);
-    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        while (!stoppingToken.IsCancellationRequested)
+        await using (var scope = serviceProvider.CreateAsyncScope())
         {
-            await using (var scope = serviceProvider.CreateAsyncScope())
-            {
-                var channel = scope.ServiceProvider.GetRequiredService<Channel<WorkerItem>>();
+            var channel = scope.ServiceProvider.GetRequiredService<Channel<WorkerItem>>();
 
-                await _semaphore.WaitAsync(stoppingToken);
-                var workerItem = await channel.Reader.ReadAsync(stoppingToken);
-                _ = CallHandler(workerItem);
-
-                async Task CallHandler(WorkerItem workerItem)
+            var enumerable = channel.Reader.ReadAllAsync(stoppingToken);
+            
+            await Parallel.ForEachAsync(
+                source: enumerable,
+                parallelOptions: new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount },
+                body: async (workerItem, _) =>
                 {
-                    await Task.Yield();
-                    
-                    try
-                    {
-                        await HandleWorkerItem(workerItem);
-                    }
-                    finally
-                    {
-                        _semaphore.Release();
-                    }
+                    await HandleWorkerItem(workerItem);
                 }
-            }
+            );
         }
     }
 

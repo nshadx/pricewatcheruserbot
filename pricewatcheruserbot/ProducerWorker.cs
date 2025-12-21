@@ -17,8 +17,9 @@ public class ProducerWorker(
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var channel = scope.ServiceProvider.GetRequiredService<Channel<WorkerItem>>();
                 
-                var workerItems = dbContext.WorkerItems.AsAsyncEnumerable();
-                await foreach (var workerItem in workerItems)
+                var enumerable = dbContext.WorkerItems.AsAsyncEnumerable();
+                
+                await foreach (var workerItem in enumerable)
                 {
                     await channel.Writer.WriteAsync(workerItem, stoppingToken);
                 }

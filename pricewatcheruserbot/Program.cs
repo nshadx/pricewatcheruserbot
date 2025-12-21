@@ -52,7 +52,11 @@ builder.Services.AddScoped<RemoveCommand.Handler>();
 builder.Services.AddSingleton<BrowserService>();
 builder.Services.AddSingleton<OzonScrapper>();
 builder.Services.AddSingleton<ScrapperFactory>();
-builder.Services.AddSingleton(Channel.CreateBounded<WorkerItem>(1024));
+builder.Services.AddSingleton(
+    Channel.CreateBounded<WorkerItem>(
+        capacity: 1024
+    )
+);
 builder.Services.AddHostedService<ProducerWorker>();
 builder.Services.AddHostedService<ConsumerWorker>();
 
