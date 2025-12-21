@@ -52,6 +52,7 @@ builder.Services.AddScoped<RemoveCommand.Handler>();
 
 builder.Services.AddSingleton<OzonScrapper>();
 builder.Services.AddSingleton<WildberriesScrapper>();
+builder.Services.AddSingleton<YandexMarketScrapper>();
 
 builder.Services.AddSingleton<BrowserService>();
 builder.Services.AddSingleton<ScrapperFactory>();

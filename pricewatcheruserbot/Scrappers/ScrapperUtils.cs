@@ -1,4 +1,4 @@
-﻿namespace pricewatcheruserbot.Scrappers.Impl;
+﻿namespace pricewatcheruserbot.Scrappers;
 
 public static class ScrapperUtils
 {
