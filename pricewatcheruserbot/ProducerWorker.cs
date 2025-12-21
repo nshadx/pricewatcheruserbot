@@ -8,6 +8,7 @@ public class ProducerWorker(
 ) : BackgroundService
 {
     private static readonly TimeSpan _delay = TimeSpan.FromSeconds(30);
+    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)

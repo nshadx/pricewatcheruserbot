@@ -10,6 +10,8 @@ public class ConsumerWorker(
     IServiceProvider serviceProvider
 ) : BackgroundService
 {
+    private static readonly TimeSpan _delay = TimeSpan.FromSeconds(10);
+   
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await using (var scope = serviceProvider.CreateAsyncScope())
@@ -26,6 +28,8 @@ public class ConsumerWorker(
                     await HandleWorkerItem(workerItem);
                 }
             );
+
+            await Task.Delay(_delay, stoppingToken);
         }
     }
 
