@@ -6,6 +6,7 @@ using pricewatcheruserbot.Commands;
 using pricewatcheruserbot.Configuration;
 using pricewatcheruserbot.Entities;
 using pricewatcheruserbot.Scrappers;
+using pricewatcheruserbot.Scrappers.Impl;
 using TL;
 using Channel = System.Threading.Channels.Channel;
 
@@ -49,8 +50,10 @@ builder.Services.AddScoped<AddCommand.Handler>();
 builder.Services.AddScoped<ListCommand.Handler>();
 builder.Services.AddScoped<RemoveCommand.Handler>();
 
-builder.Services.AddSingleton<BrowserService>();
 builder.Services.AddSingleton<OzonScrapper>();
+builder.Services.AddSingleton<WildberriesScrapper>();
+
+builder.Services.AddSingleton<BrowserService>();
 builder.Services.AddSingleton<ScrapperFactory>();
 builder.Services.AddSingleton(
     Channel.CreateBounded<WorkerItem>(
@@ -72,7 +75,7 @@ await using (var scope = host.Services.CreateAsyncScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     
-    await dbContext.Database.EnsureDeletedAsync();
+    //await dbContext.Database.EnsureDeletedAsync();
     await dbContext.Database.EnsureCreatedAsync();
 }
 

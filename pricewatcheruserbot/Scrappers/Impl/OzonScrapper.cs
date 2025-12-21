@@ -1,6 +1,6 @@
 ﻿using Microsoft.Playwright;
 
-namespace pricewatcheruserbot.Scrappers;
+namespace pricewatcheruserbot.Scrappers.Impl;
 
 public class OzonScrapper(BrowserService browserService) : IScrapper
 {
@@ -9,26 +9,20 @@ public class OzonScrapper(BrowserService browserService) : IScrapper
         var browser = await browserService.GetBrowser();
         var page = await browser.NewPageAsync();
         
-        await page.GotoAsync(url.ToString());
+        try
+        {
+            await page.GotoAsync(url.ToString());
 
-        PageObject pageObject = new(page);
-        var priceString = await pageObject.GetPrice();
-        var priceValue = GetPriceValueWithoutCurrency(priceString);
+            PageObject pageObject = new(page);
+            var priceString = await pageObject.GetPrice();
+            var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
 
-        await page.CloseAsync();
-        
-        return priceValue;
-    }
-
-    private static double GetPriceValueWithoutCurrency(string price)
-    {
-        var onlyDigits = price
-            .Where(char.IsDigit)
-            .ToArray();
-        
-        var value = double.Parse(onlyDigits);
-
-        return value;
+            return priceValue;
+        }
+        finally
+        {
+            await page.CloseAsync();
+        }
     }
 
     private class PageObject(IPage page)
