@@ -6,7 +6,7 @@ public class WildberriesScrapper(BrowserService browserService) : IScrapper
 {
     public async Task<double> GetPrice(Uri url)
     {
-        var browser = await browserService.GetBrowser();
+        var browser = await browserService.GetBrowserContext();
         var page = await browser.NewPageAsync();
         
         try

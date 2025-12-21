@@ -5,22 +5,24 @@ namespace pricewatcheruserbot;
 
 public class BrowserService
 {
-    private IBrowser? _browser;
+    private IBrowserContext? _browserContext;
 
-    public async Task<IBrowser> GetBrowser()
+    public async Task<IBrowserContext> GetBrowserContext()
     {
         await Initialize();
 
-        return _browser;
+        return _browserContext;
     }
     
-    [MemberNotNull(nameof(_browser))]
+    [MemberNotNull(nameof(_browserContext))]
     private async Task Initialize()
     {
-        if (_browser is null)
+        if (_browserContext is null)
         {
             var instance = await Playwright.CreateAsync();
-            _browser = await instance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions() { Headless = false, Args = ["--disable-blink-features=AutomationControlled"] });
+            var browser = await instance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions() { Headless = false, Args = ["--disable-blink-features=AutomationControlled", "--start-minimized"] });
+
+            _browserContext = await browser.NewContextAsync();
         }
     }
 }
