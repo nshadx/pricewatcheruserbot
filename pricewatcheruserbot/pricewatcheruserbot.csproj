@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-pricewatcheruserbot-3ae290f4-1d37-44b6-9a63-1d0cbb32ecb5</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
@@ -13,5 +14,11 @@
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.1"/>
         <PackageReference Include="Microsoft.Playwright" Version="1.57.0" />
         <PackageReference Include="WTelegramClient" Version="4.3.15" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
     </ItemGroup>
 </Project>
