@@ -1,4 +1,3 @@
-using System.Threading.Channels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using pricewatcheruserbot;
@@ -17,8 +16,16 @@ builder.Services.AddSingleton<UpdateHandler>();
 builder.Services.AddSingleton(provider =>
 {
     var botCredentials = provider.GetRequiredService<IOptions<BotCredentials>>().Value;
+    var logger = provider.GetRequiredService<ILogger<WTelegram.Client>>();
     
-    var client = new WTelegram.Client(Config);
+    var client = new WTelegram.Client(
+        Config,
+        File.Open(Environment.GetEnvironmentVariable("TG_Session_FilePath") ?? throw new ArgumentException("you should provide session file path"), FileMode.OpenOrCreate)
+    );
+    WTelegram.Helpers.Log = (logLevel, message) =>
+    {
+        logger.Log((LogLevel)logLevel, message);
+    };
     
     string? Config(string what)
     {
@@ -29,8 +36,6 @@ builder.Services.AddSingleton(provider =>
             case "password": return botCredentials.Password;
             case "phone_number": return botCredentials.PhoneNumber;
             case "verification_code": Console.Write("Verification code: "); return Console.ReadLine();
-            case "first_name": throw new NotImplementedException();
-            case "last_name": throw new NotImplementedException();
             default: return null;
         }
     }

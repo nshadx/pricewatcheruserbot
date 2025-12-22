@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using pricewatcheruserbot.Entities;
 using TL;
 
@@ -28,6 +29,7 @@ public class RemoveCommand
     
     public class Handler(
         AppDbContext dbContext,
+        IMemoryCache memoryCache,
         WTelegram.Client client
     )
     {
@@ -47,6 +49,8 @@ public class RemoveCommand
 
             dbContext.WorkerItems.Remove(workerItem);
             await dbContext.SaveChangesAsync();
+
+            memoryCache.Remove(workerItem.Id);
 
             var listMessages = dbContext.SentMessages
                 .Where(x => x.Type == MessageType.LIST)

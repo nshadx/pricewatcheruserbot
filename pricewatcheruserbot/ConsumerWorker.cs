@@ -17,7 +17,8 @@ public class ConsumerWorker(
         await using (var scope = serviceProvider.CreateAsyncScope())
         {
             var channel = scope.ServiceProvider.GetRequiredService<Channel<WorkerItem>>();
-
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<ConsumerWorker>>();
+            
             var enumerable = channel.Reader.ReadAllAsync(stoppingToken);
             
             await Parallel.ForEachAsync(
@@ -25,7 +26,14 @@ public class ConsumerWorker(
                 parallelOptions: new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount },
                 body: async (workerItem, _) =>
                 {
-                    await HandleWorkerItem(workerItem);
+                    try
+                    {
+                        await HandleWorkerItem(workerItem);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "an error occured during handling of url");
+                    }
                 }
             );
 
