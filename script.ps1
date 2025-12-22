@@ -7,13 +7,12 @@
     [string]$DataVolume = "pricewatcher_data"
 )
 
-# === Проверки зависимостей ===
+# ===== Проверки =====
 
-function Require-Command($name, $installHint) {
+function Require-Command($name, $hint) {
     if (-not (Get-Command $name -ErrorAction SilentlyContinue)) {
-        Write-Host ""
-        Write-Host "❌ $name не найден." -ForegroundColor Red
-        Write-Host "👉 $installHint"
+        Write-Host "❌ $name не найден" -ForegroundColor Red
+        Write-Host "👉 $hint"
         exit 1
     }
 }
@@ -21,67 +20,56 @@ function Require-Command($name, $installHint) {
 function Require-DockerRunning {
     docker info *> $null
     if ($LASTEXITCODE -ne 0) {
-        Write-Host ""
-        Write-Host "❌ Docker установлен, но daemon не запущен." -ForegroundColor Red
-        Write-Host "👉 Запусти Docker Desktop и попробуй снова."
+        Write-Host "❌ Docker daemon не запущен" -ForegroundColor Red
+        Write-Host "👉 Запусти Docker Desktop"
         exit 1
     }
 }
 
-Require-Command git "Установи Git: https://git-scm.com/downloads"
-Require-Command docker "Установи Docker: https://docs.docker.com/get-docker/"
+Require-Command git "https://git-scm.com/downloads"
+Require-Command docker "https://docs.docker.com/get-docker/"
 Require-DockerRunning
 
-# === Repo path из $HOME ===
+# ===== Repo path =====
 
 $RepoName = [System.IO.Path]::GetFileNameWithoutExtension($RepoUrl)
 $RepoPath = Join-Path $HOME $RepoName
 
 function Read-Secret($prompt) {
     $secure = Read-Host $prompt -AsSecureString
-    return [Runtime.InteropServices.Marshal]::PtrToStringAuto(
+    [Runtime.InteropServices.Marshal]::PtrToStringAuto(
         [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
     )
 }
 
-Write-Host "==> Репозиторий: $RepoName"
-Write-Host "==> Путь: $RepoPath"
-Write-Host ""
+# ===== Git =====
 
-# === Git ===
-
-if (-Not (Test-Path $RepoPath)) {
-    Write-Host "==> Клонирую репозиторий..."
+if (-not (Test-Path $RepoPath)) {
     git clone $RepoUrl $RepoPath
 } else {
-    Write-Host "==> Обновляю репозиторий (pull --rebase)..."
     Set-Location $RepoPath
     git pull --rebase
 }
 
 Set-Location $RepoPath
 
-# === Docker build ===
+# ===== Docker build =====
 
 $oldImageId = docker images -q $ImageName 2>$null
-
-Write-Host "==> Сборка Docker-образа..."
 docker build -f pricewatcheruserbot/Dockerfile -t $ImageName .
-
 $newImageId = docker images -q $ImageName
 $imageChanged = $oldImageId -ne $newImageId
 
-# === Контейнер ===
+# ===== Container =====
 
 $containerExists = docker ps -a --format "{{.Names}}" | Where-Object { $_ -eq $ContainerName }
 
 if ($containerExists -and $imageChanged) {
-    Write-Host "==> Образ изменился, пересоздаю контейнер..."
     docker stop $ContainerName | Out-Null
     docker rm $ContainerName | Out-Null
 }
 
-if (-Not $containerExists -or $imageChanged) {
+if (-not $containerExists -or $imageChanged) {
 
     Write-Host ""
     Write-Host "==> Введите данные для бота (не сохраняются):"
@@ -92,9 +80,12 @@ if (-Not $containerExists -or $imageChanged) {
     $password = Read-Secret "Enter 2FA password (hidden)"
 
     Write-Host ""
-    Write-Host "==> Запуск интерактивного long-running контейнера..."
+    Write-Host "==> Контейнер запускается В ЭТОМ ОКНЕ"
+    Write-Host "==> После ввода кода Telegram нажми:"
+    Write-Host "==> Ctrl+P, затем Ctrl+Q (НЕ Ctrl+C!)"
+    Write-Host ""
 
-    docker run -it -d `
+    docker run -it `
         --name $ContainerName `
         --restart unless-stopped `
         -e BotCredentials__ApiId="$apiId" `
@@ -104,15 +95,8 @@ if (-Not $containerExists -or $imageChanged) {
         -v ${DataVolume}:/data `
         $ImageName
 
-    Write-Host ""
-    Write-Host "==> Подключиться к контейнеру:"
-    Write-Host "   docker attach $ContainerName"
-    Write-Host "   Detach: Ctrl+P, Ctrl+Q"
-
 } else {
-    Write-Host "==> Контейнер уже существует. Запускаю..."
+    Write-Host "==> Контейнер уже существует. Подключаюсь..."
     docker start $ContainerName
+    docker attach $ContainerName
 }
-
-Write-Host ""
-Write-Host "✅ Всё готово. Бот работает."
