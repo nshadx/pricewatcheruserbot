@@ -8,7 +8,7 @@
 1. Зайти [вот сюда](https://my.telegram.org/auth) -> API Development tools -> Create New Application (Type=Desktop) -> получить `api_id` и `api_hash`.
 2. Скачать [вот этот скрипт и запустить его](https://github.com/nshadx/pricewatcheruserbot/blob/master/script.ps1) через Windows PowerShell (Run As Administrator).
 Если нет Docker Desktop, git скрипт даст соответствующие ссылки на скачивание.
-3. Сразу после завершения скрипта будет запущено приложение и попросит (если включено 2FA) ввести `Verification code: `. В конце `Ctrl+P, Ctrl+Q`. При последующих запусках такая процедура не понадобится.
+3. Сразу после завершения скрипта будет запущено приложение и попросит ввести данные для авторизации, а также если включено 2FA `Verification code: `. В конце `Ctrl+P, Ctrl+Q`. При последующих запусках такая процедура не понадобится.
 
 # Команды
 
