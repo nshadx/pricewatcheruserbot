@@ -7,18 +7,20 @@ using TL;
 namespace pricewatcheruserbot;
 
 public class ConsumerWorker(
-    IServiceProvider serviceProvider
+    IServiceProvider serviceProvider,
+    ChannelReader<WorkerItem> channel,
+    ILogger<ConsumerWorker> logger,
+    ScrapperFactory scrapperFactory,
+    IMemoryCache memoryCache,
+    WTelegram.Client client
 ) : BackgroundService
 {
-    private static readonly TimeSpan _delay = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan _delay = TimeSpan.FromSeconds(30);
    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await using (var scope = serviceProvider.CreateAsyncScope())
+        while (!stoppingToken.IsCancellationRequested)
         {
-            var channel = scope.ServiceProvider.GetRequiredService<ChannelReader<WorkerItem>>();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<ConsumerWorker>>();
-            
             var enumerable = channel.ReadAllAsync(stoppingToken);
             
             await Parallel.ForEachAsync(
@@ -46,11 +48,6 @@ public class ConsumerWorker(
     {
         await using (var scope = serviceProvider.CreateAsyncScope())
         {
-            var scrapperFactory = scope.ServiceProvider.GetRequiredService<ScrapperFactory>();
-            var memoryCache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
-            var client = scope.ServiceProvider.GetRequiredService<WTelegram.Client>();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<ConsumerWorker>>();
-            
             var scrapper = scrapperFactory.GetScrapper(workerItem.Url);
             var price = await scrapper.GetPrice(workerItem.Url);
 
