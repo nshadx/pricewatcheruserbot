@@ -26,7 +26,7 @@ RUN apt-get install xvfb -y
 RUN apt-get install xauth -y
 VOLUME /data
 ENV DbConnectionString="Data Source = /data/app.db"
-ENV TelegramSessionFilePath="/data/session"
+ENV TelegramSessionFilePath="/data/telegram-session"
 ENV BrowserSessionFilePath="/data/browser-session"
 ENV StorageDirectoryPath="/data/"
 CMD ["/bin/sh", "-c", "/usr/bin/xvfb-run --server-args='-screen 0, 1920x1080x24' dotnet pricewatcheruserbot.dll", ""]

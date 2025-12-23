@@ -21,11 +21,11 @@ public class BrowserService : IAsyncDisposable
         {
             var instance = await Playwright.CreateAsync();
             var browser = await instance.Firefox.LaunchAsync(new BrowserTypeLaunchOptions() { Headless = false });
-
+            
             string? storageStatePath = null;
-            if (File.Exists(Environment.GetEnvironmentVariable("Session_Storage")))
+            if (File.Exists(EnvironmentVariables.BrowserSessionFilePath))
             {
-                storageStatePath = Environment.GetEnvironmentVariable("Session_Storage");
+                storageStatePath = Environment.GetEnvironmentVariable(EnvironmentVariables.BrowserSessionFilePath);
             }
             
             _browserContext = await browser.NewContextAsync(new BrowserNewContextOptions() { StorageStatePath = storageStatePath });

@@ -96,7 +96,7 @@ var channel = Channel.CreateBounded<WorkerItem>(
         SingleReader = false,
         SingleWriter = false,
         AllowSynchronousContinuations = false,
-        FullMode = BoundedChannelFullMode.DropOldest
+        FullMode = BoundedChannelFullMode.DropWrite
     });
 builder.Services.AddSingleton<ChannelReader<WorkerItem>>(channel);
 builder.Services.AddSingleton<ChannelWriter<WorkerItem>>(resolver =>
