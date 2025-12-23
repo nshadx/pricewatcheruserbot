@@ -76,7 +76,7 @@ if (-not $containerExists -or $imageChanged) {
 
     $apiId = Read-Host "Enter ApiId"
     $apiHash = Read-Host "Enter ApiHash"
-    $phoneNumber = Read-Host "Enter phone number"
+    $phoneNumber = Read-Host "Enter phone number with country code (+7)"
     $password = Read-Secret "Enter 2FA password (hidden)"
 
     Write-Host ""

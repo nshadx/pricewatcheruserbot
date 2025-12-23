@@ -4,7 +4,7 @@ namespace pricewatcheruserbot.Scrappers.Impl;
 
 public class OzonScrapper(
     BrowserService browserService,
-    Func<string, string> configProvider
+    [FromKeyedServices("ozon")] Func<string, string> configProvider
 ) : IScrapper
 {
     public async Task Authorize()

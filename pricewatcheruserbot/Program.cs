@@ -42,21 +42,17 @@ builder.Services.AddSingleton(provider =>
     
     return client;
 });
-builder.Services.AddSingleton(provider =>
-{
-    Func<string, string> configProvider = what =>
+builder.Services.AddKeyedSingleton("ozon", (Func<string, string>)(what =>
     {
         switch (what)
         {
-            case "phone_number": Console.Write("Phone number: "); return Console.ReadLine()!;
+            case "phone_number": Console.Write("Phone number without country code: "); return Console.ReadLine()!;
             case "code": Console.Write("Code: "); return Console.ReadLine()!;
             case "email_code": Console.Write("Email code: "); return Console.ReadLine()!;
             default: return null!;
         }
-    };
-
-    return configProvider;
-});
+    })
+);
 
 builder.Services.AddDbContext<AppDbContext>(x =>
 {
@@ -105,5 +101,7 @@ foreach (var scrapper in scrappers)
 {
     await scrapper.Authorize();
 }
+
+Console.WriteLine("Success authorization in all services");
 
 await host.RunAsync();
