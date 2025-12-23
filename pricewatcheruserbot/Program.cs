@@ -17,17 +17,10 @@ builder.Services.AddSingleton(provider =>
 {
     var botCredentials = provider.GetRequiredService<IOptions<BotCredentials>>().Value;
     var logger = provider.GetRequiredService<ILogger<WTelegram.Client>>();
-    
-    var client = new WTelegram.Client(
-        Config,
-        File.Open(Environment.GetEnvironmentVariable("TG_Session_FilePath") ?? throw new ArgumentException("you should provide session file path"), FileMode.OpenOrCreate)
-    );
-    WTelegram.Helpers.Log = (logLevel, message) =>
-    {
-        logger.Log((LogLevel)logLevel, message);
-    };
-    
-    string? Config(string what)
+
+    var file = File.Open(Environment.GetEnvironmentVariable("TG_Session_FilePath") ?? throw new ArgumentException("you should provide session file path"), FileMode.OpenOrCreate);
+
+    Func<string, string?> config = what =>
     {
         switch (what)
         {
@@ -38,7 +31,17 @@ builder.Services.AddSingleton(provider =>
             case "verification_code": Console.Write("Verification code: "); return Console.ReadLine();
             default: return null;
         }
-    }
+    };
+    
+    WTelegram.Helpers.Log = (logLevel, message) =>
+    {
+        logger.Log((LogLevel)logLevel, message);
+    };
+    
+    var client = new WTelegram.Client(
+        config,
+        file
+    );
     
     return client;
 });
