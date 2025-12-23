@@ -69,10 +69,15 @@ if ($containerExists -and $imageChanged) {
     docker rm $ContainerName | Out-Null
 }
 
-if (-not $containerExists -or $imageChanged) {
+$sessionExists = docker run --rm `
+    -v ${DataVolume}:/data `
+    busybox `
+    sh -c "test -f /data/session" 2>$null
+
+if ($LASTEXITCODE -ne 0) {
 
     Write-Host ""
-    Write-Host "==> Введите данные для бота (не сохраняются):"
+    Write-Host "==> Файл session в volume не найден. Введите данные для бота:"
 
     $apiId = Read-Host "Enter ApiId"
     $apiHash = Read-Host "Enter ApiHash"
@@ -96,7 +101,10 @@ if (-not $containerExists -or $imageChanged) {
         $ImageName
 
 } else {
-    Write-Host "==> Контейнер уже существует. Подключаюсь..."
-    docker start $ContainerName
-    docker attach $ContainerName
+    Write-Host "==> Файл session найден в volume. Подключаюсь..."
+    docker run -it `
+        --name $ContainerName `
+        -v ${DataVolume}:/data `
+        $ImageName
 }
+
