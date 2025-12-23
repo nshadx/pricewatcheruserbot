@@ -15,7 +15,8 @@ public class ConsumerWorker(
     WTelegram.Client client
 ) : BackgroundService
 {
-    private static readonly TimeSpan _delay = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan _delay = TimeSpan.FromMinutes(10);
+    private const int _workers = 3;
    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -24,8 +25,8 @@ public class ConsumerWorker(
             var enumerable = channel.ReadAllAsync(stoppingToken);
             
             await Parallel.ForEachAsync(
-                source: enumerable.Take(Environment.ProcessorCount),
-                parallelOptions: new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount },
+                source: enumerable.Take(_workers),
+                parallelOptions: new ParallelOptions() { MaxDegreeOfParallelism = _workers },
                 body: async (workerItem, _) =>
                 {
                     try

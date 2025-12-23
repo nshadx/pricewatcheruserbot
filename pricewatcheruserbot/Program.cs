@@ -32,7 +32,12 @@ builder.Services.AddSingleton(provider =>
     
     WTelegram.Helpers.Log = (logLevel, message) =>
     {
-        logger.Log((LogLevel)logLevel, message);
+        var level = (LogLevel)logLevel;
+
+        if (level is LogLevel.Error or LogLevel.Critical)
+        {
+            logger.Log(level, message);
+        }
     };
     
     var client = new WTelegram.Client(
@@ -99,32 +104,31 @@ using (var host = builder.Build())
     var client = host.Services.GetRequiredService<WTelegram.Client>();
     var updateRouter = host.Services.GetRequiredService<UpdateHandler>();
     var logger = host.Services.GetRequiredService<ILogger<Program>>();
+    var scrappers = host.Services.GetServices<IScrapper>();
 
     _ = await client.LoginUserIfNeeded();
     _ = client.WithUpdateManager(updateRouter.Handle);
+    
+    try
+    { 
+        foreach (var scrapper in scrappers)
+        {
+            await scrapper.Authorize();
+        }
+
+        logger.LogInformation("success authorization in services");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "failed to authorization in services");
+        return;
+    }
 
     await using (var scope = host.Services.CreateAsyncScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var scrappers = scope.ServiceProvider.GetServices<IScrapper>();
 
         await dbContext.Database.EnsureCreatedAsync();
-        
-        try
-        { 
-            foreach (var scrapper in scrappers)
-            {
-                await scrapper.Authorize();
-            }
-
-            logger.LogInformation("Success authorization in services");
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to authorization in services");
-            await host.StopAsync();
-            return;
-        }
     }
 
     await host.RunAsync();
