@@ -13,42 +13,60 @@ public class OzonScrapper(
         var browser = await browserService.GetBrowserContext();
         var page = await browser.NewPageAsync();
         
+        logger.LogInformation("Page init...");
         await page.AddInitScriptAsync("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
         await page.GotoAsync("https://ozon.ru");
-
+        logger.LogInformation("Page loaded");
+        
         try
         {
             PageObject pageObject = new(page);
 
+            logger.LogInformation("Check for login requirement...");
+            
             var requiresLogin = await pageObject.RequiresLogin();
             if (requiresLogin)
             {
+                logger.LogInformation("Begin login...");
+                
                 await pageObject.ClickLogin();
 
+                logger.LogInformation("Phone number requested");
+                
                 var phoneNumber = configProvider("phone_number");
                 await pageObject.EnterPhoneNumber(phoneNumber);
+                
+                logger.LogInformation("Select code via phone authentication way...");
                 await pageObject.LoginSubmit();
                 await pageObject.SelectAnotherLoginWay();
 
+                logger.LogInformation("Code requested");
+                
                 var code = configProvider("code");
                 await pageObject.EnterCode(code);
 
+                logger.LogInformation("Check for email verification requirement...");
+                
                 var requiresEmail = await pageObject.SendEmailVerification();
                 if (requiresEmail)
                 {
+                    logger.LogInformation("Email verification requested");
+                    
                     var emailCode = configProvider("email_code");
                     await pageObject.EnterCode(emailCode);
                 }
 
                 if (!await pageObject.RequiresLogin())
                 {
+                    logger.LogInformation("Successful authorization");
+                    
                     await browser.StorageStateAsync(new BrowserContextStorageStateOptions() { Path = Environment.GetEnvironmentVariable("Session_Storage") });
                 }
             }
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "failed to authorize");
+            logger.LogError(ex, "Failed to authorize");
         }
         finally
         {
@@ -61,17 +79,23 @@ public class OzonScrapper(
         var browser = await browserService.GetBrowserContext();
         var page = await browser.NewPageAsync();
         
+        logger.LogInformation("Page init...");
         page.SetDefaultTimeout(15000);
         await page.AddInitScriptAsync("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
         await page.GotoAsync(url.ToString());
+        logger.LogInformation("Page loaded");
         
         try
         {
             PageObject pageObject = new(page);
             
+            logger.LogInformation("Begin price selecting...");
+            
             var priceString = await pageObject.GetPrice();
             var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
 
+            logger.LogInformation("Price was received successfully");
+            
             return priceValue;
         }
         finally

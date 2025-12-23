@@ -86,7 +86,7 @@ public class ConsumerWorker(
 
         string result = "";
 
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             int index = Random.Shared.Next(emojis.Length);
             result += emojis[index];

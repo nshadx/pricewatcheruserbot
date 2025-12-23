@@ -15,17 +15,17 @@ builder.Services.AddSingleton(provider =>
 {
     var logger = provider.GetRequiredService<ILogger<WTelegram.Client>>();
 
-    var file = File.Open(Environment.GetEnvironmentVariable("TG_Session_FilePath") ?? throw new ArgumentException("you should provide session file path"), FileMode.OpenOrCreate);
+    var session = File.Open(EnvironmentVariables.TelegramSessionFilePath, FileMode.OpenOrCreate);
 
     Func<string, string?> config = what =>
     {
         switch (what)
         {
-            case "api_id": Console.Write("ApiId: "); return Console.ReadLine();
-            case "api_hash": Console.Write("ApiHash: "); return Console.ReadLine();
-            case "password": Console.Write("Password: "); return Console.ReadLine();
-            case "phone_number": Console.Write("Phone number with country code (+7): "); return Console.ReadLine();
-            case "verification_code": Console.Write("Verification code: "); return Console.ReadLine();
+            case "api_id": Console.Write("(Telegram) Enter ApiId: "); return Console.ReadLine();
+            case "api_hash": Console.Write("(Telegram) ApiHash: "); return Console.ReadLine();
+            case "password": Console.Write("(Telegram) Password: "); return Console.ReadLine();
+            case "phone_number": Console.Write("(Telegram) Phone number with country code (+7): "); return Console.ReadLine();
+            case "verification_code": Console.Write("(Telegram) Verification code: "); return Console.ReadLine();
             default: return null;
         }
     };
@@ -42,7 +42,7 @@ builder.Services.AddSingleton(provider =>
     
     var client = new WTelegram.Client(
         config,
-        file
+        session
     );
     
     return client;
@@ -51,9 +51,9 @@ builder.Services.AddKeyedSingleton("ozon", (Func<string, string>)(what =>
     {
         switch (what)
         {
-            case "phone_number": Console.Write("Phone number without country code: "); return Console.ReadLine()!;
-            case "code": Console.Write("Code: "); return Console.ReadLine()!;
-            case "email_code": Console.Write("Email code: "); return Console.ReadLine()!;
+            case "phone_number": Console.Write("(Ozon) Phone number without country code: "); return Console.ReadLine()!;
+            case "code": Console.Write("(Ozon) Authentication Code: "); return Console.ReadLine()!;
+            case "email_code": Console.Write("(Ozon) Email authentication code: "); return Console.ReadLine()!;
             default: return null!;
         }
     })
@@ -61,9 +61,7 @@ builder.Services.AddKeyedSingleton("ozon", (Func<string, string>)(what =>
 
 builder.Services.AddDbContext<AppDbContext>(x =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("DbConnection");
-    
-    x.UseSqlite(connectionString);
+    x.UseSqlite(EnvironmentVariables.DbConnectionString);
 });
 builder.Services.AddMemoryCache();
 
@@ -84,7 +82,7 @@ var channel = Channel.CreateBounded<WorkerItem>(
         SingleReader = false,
         SingleWriter = false,
         AllowSynchronousContinuations = false,
-        FullMode = BoundedChannelFullMode.DropNewest
+        FullMode = BoundedChannelFullMode.DropOldest
     });
 builder.Services.AddSingleton<ChannelReader<WorkerItem>>(channel);
 builder.Services.AddSingleton<ChannelWriter<WorkerItem>>(resolver =>
@@ -116,12 +114,11 @@ using (var host = builder.Build())
             await scrapper.Authorize();
         }
 
-        logger.LogInformation("success authorization in services");
+        logger.LogInformation("Successful authorization in services");
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "failed to authorization in services");
-        return;
+        logger.LogError(ex, "Failed authorization in services");
     }
 
     await using (var scope = host.Services.CreateAsyncScope())
