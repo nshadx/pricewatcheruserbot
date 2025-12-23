@@ -137,7 +137,7 @@ public class OzonScrapper(
 
             try
             {
-                await locator.WaitForAsync();
+                await locator.WaitForAsync(new LocatorWaitForOptions() { State = WaitForSelectorState.Visible });
                 return true;
             } catch { return false; }
         }
