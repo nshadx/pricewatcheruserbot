@@ -84,6 +84,7 @@ var host = builder.Build();
 
 var client = host.Services.GetRequiredService<WTelegram.Client>();
 var updateRouter = host.Services.GetRequiredService<UpdateHandler>();
+var logger = host.Services.GetRequiredService<ILogger<Program>>();
 
 _ = await client.LoginUserIfNeeded();
 _ = client.WithUpdateManager(updateRouter.Handle);
@@ -97,11 +98,19 @@ await using (var scope = host.Services.CreateAsyncScope())
 
 var scrappers = host.Services.GetServices<IScrapper>();
 
-foreach (var scrapper in scrappers)
+try
 {
-    await scrapper.Authorize();
-}
+    foreach (var scrapper in scrappers)
+    {
+        await scrapper.Authorize();
+    }
 
-Console.WriteLine("Success authorization in all services");
+    logger.LogInformation("Success authorization in services");
+}
+catch
+{
+    logger.LogError("Failed to authorization in services");
+    await host.StopAsync();
+}
 
 await host.RunAsync();
