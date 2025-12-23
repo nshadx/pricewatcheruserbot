@@ -15,8 +15,8 @@ public class ConsumerWorker(
     WTelegram.Client client
 ) : BackgroundService
 {
-    private static readonly TimeSpan _delay = TimeSpan.FromMinutes(10);
-    private const int _workers = 3;
+    private static readonly TimeSpan _delay = TimeSpan.FromMinutes(5);
+    private const int _workers = 4;
    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

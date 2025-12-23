@@ -7,7 +7,7 @@ public class ProducerWorker(
     IServiceProvider serviceProvider
 ) : BackgroundService
 {
-    private static readonly TimeSpan _delay = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan _delay = TimeSpan.FromMinutes(4);
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

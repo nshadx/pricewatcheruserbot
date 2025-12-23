@@ -79,7 +79,7 @@ builder.Services.AddSingleton<BrowserService>();
 builder.Services.AddSingleton<ScrapperFactory>();
 
 var channel = Channel.CreateBounded<WorkerItem>(
-    new BoundedChannelOptions(1024)
+    new BoundedChannelOptions(32)
     {
         SingleReader = false,
         SingleWriter = false,
