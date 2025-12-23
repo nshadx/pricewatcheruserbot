@@ -31,7 +31,7 @@ builder.Services.AddSingleton(provider =>
             case "api_hash": return EnvironmentVariables.ApiHash;
             case "password": return EnvironmentVariables.Password;
             case "phone_number": return EnvironmentVariables.PhoneNumber;
-            case "verification_code": Console.Write("(Telegram) Enter verification code from Telegram Application: "); return Console.ReadLine();
+            case "verification_code": Console.WriteLine("(Telegram) Enter verification code from Telegram Application: "); return Console.ReadLine();
             default: return null;
         } 
 #else
@@ -65,9 +65,9 @@ builder.Services.AddKeyedSingleton("ozon", (Func<string, string>)(what =>
     {
         switch (what)
         {
-            case "phone_number": Console.Write("(Ozon) Phone number without country code: "); return Console.ReadLine()!;
-            case "code": Console.Write("(Ozon) Authentication Code: "); return Console.ReadLine()!;
-            case "email_code": Console.Write("(Ozon) Email authentication code: "); return Console.ReadLine()!;
+            case "phone_number": Console.WriteLine("(Ozon) Phone number without country code: "); return Console.ReadLine()!;
+            case "code": Console.WriteLine("(Ozon) Authentication Code: "); return Console.ReadLine()!;
+            case "email_code": Console.WriteLine("(Ozon) Email authentication code: "); return Console.ReadLine()!;
             default: return null!;
         }
     })

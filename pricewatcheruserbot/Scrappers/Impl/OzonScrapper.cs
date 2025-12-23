@@ -175,7 +175,7 @@ public class OzonScrapper(
         {
             var locator = page
                 .FrameLocator("#authFrame")
-                .Locator("//div[contains(@data-widget, 'loginOrRegistration')]/descendant::button/div[contains(text(), 'Войти другим способом')]/..").First;
+                .Locator("//div[contains(@data-widget, 'loginOrRegistration')]/descendant::button/div[contains(text(), 'Войти другим способом')]").First;
 
             await locator.ClickAsync();
         }
