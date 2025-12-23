@@ -14,8 +14,8 @@ public class WildberriesScrapper(BrowserService browserService) : IScrapper
         var browser = await browserService.GetBrowserContext();
         var page = await browser.NewPageAsync();
         
-        await page.GotoAsync(url.ToString());
         await page.AddInitScriptAsync("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
+        await page.GotoAsync(url.ToString());
         
         try
         {
