@@ -1,5 +1,5 @@
+using System.Threading.Channels;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using pricewatcheruserbot;
 using pricewatcheruserbot.Commands;
 using pricewatcheruserbot.Entities;
@@ -72,11 +72,25 @@ builder.Services.AddSingleton<IScrapper, YandexMarketScrapper>();
 
 builder.Services.AddSingleton<BrowserService>();
 builder.Services.AddSingleton<ScrapperFactory>();
-builder.Services.AddSingleton(
-    Channel.CreateBounded<WorkerItem>(
-        capacity: 1024
-    )
-);
+
+var channel = Channel.CreateBounded<WorkerItem>(
+    new BoundedChannelOptions(1024)
+    {
+        SingleReader = false,
+        SingleWriter = false,
+        AllowSynchronousContinuations = false,
+        FullMode = BoundedChannelFullMode.DropNewest
+    });
+builder.Services.AddSingleton<ChannelReader<WorkerItem>>(channel);
+builder.Services.AddSingleton<ChannelWriter<WorkerItem>>(resolver =>
+{
+    var hostLifetime = resolver.GetRequiredService<IHostApplicationLifetime>();
+    
+    hostLifetime.ApplicationStopping.Register(() => { channel.Writer.Complete(); });
+    
+    return channel;
+});
+
 builder.Services.AddHostedService<ProducerWorker>();
 builder.Services.AddHostedService<ConsumerWorker>();
 

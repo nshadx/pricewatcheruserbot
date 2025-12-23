@@ -16,10 +16,10 @@ public class ConsumerWorker(
     {
         await using (var scope = serviceProvider.CreateAsyncScope())
         {
-            var channel = scope.ServiceProvider.GetRequiredService<Channel<WorkerItem>>();
+            var channel = scope.ServiceProvider.GetRequiredService<ChannelReader<WorkerItem>>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<ConsumerWorker>>();
             
-            var enumerable = channel.Reader.ReadAllAsync(stoppingToken);
+            var enumerable = channel.ReadAllAsync(stoppingToken);
             
             await Parallel.ForEachAsync(
                 source: enumerable,
@@ -57,7 +57,7 @@ public class ConsumerWorker(
                 if (price < previousPrice)
                 {
                     var difference = previousPrice - price;
-                    var text = $"The item's ({workerItem}) price has dropped by {difference}";
+                    var text = $"{GenerateRandomEmojis(3)}: The item's ({workerItem}) price has dropped by {difference}";
                             
                     await client.SendMessageAsync(
                         peer: new InputPeerSelf(),
@@ -68,5 +68,24 @@ public class ConsumerWorker(
 
             memoryCache.Set(workerItem.Id, price);
         }
+    }
+    
+    private static string GenerateRandomEmojis(int count)
+    {
+        string[] emojis =
+        [
+            "🔥", "🎉", "💥", "✨", "🌟", "🚀", "❤️", "😎", "🤩", "🌈",
+            "💫", "🎊", "💎", "🎵", "🕺", "🍕", "🍿", "⚡", "🥳", "👑"
+        ];
+
+        string result = "";
+
+        for (int i = 0; i < count; i++)
+        {
+            int index = Random.Shared.Next(emojis.Length);
+            result += emojis[index];
+        }
+
+        return result;
     }
 }
