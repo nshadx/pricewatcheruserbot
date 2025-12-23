@@ -46,10 +46,6 @@ public class OzonScrapper(
                     await browser.StorageStateAsync(new BrowserContextStorageStateOptions() { Path = Environment.GetEnvironmentVariable("Session_Storage") });
                 }
             }
-            else
-            {
-                await page.ScreenshotAsync(new PageScreenshotOptions() { Path = "/data/1.png" });
-            }
         }
         catch (Exception ex)
         {
@@ -169,8 +165,6 @@ public class OzonScrapper(
         
         public async Task<string> GetPrice()
         {
-            await page.ScreenshotAsync(new PageScreenshotOptions() { Path = "/data/2.png" });
-            
             var locator = page
                 .Locator("//div[contains(@data-widget, 'webPrice')]/descendant::span").First
                 .Or(
