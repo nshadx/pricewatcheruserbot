@@ -8,6 +8,11 @@ using pricewatcheruserbot.Scrappers.Impl;
 using TL;
 using Channel = System.Threading.Channels.Channel;
 
+#if DEBUG
+DotNetEnv.Env.Load();
+DotNetEnv.Env.TraversePath();
+#endif
+
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddSingleton<UpdateHandler>();
@@ -19,25 +24,34 @@ builder.Services.AddSingleton(provider =>
 
     Func<string, string?> config = what =>
     {
+#if DEBUG
         switch (what)
         {
-            case "api_id": Console.Write("(Telegram) Enter ApiId: "); return Console.ReadLine();
-            case "api_hash": Console.Write("(Telegram) ApiHash: "); return Console.ReadLine();
-            case "password": Console.Write("(Telegram) Password: "); return Console.ReadLine();
-            case "phone_number": Console.Write("(Telegram) Phone number with country code (+7): "); return Console.ReadLine();
-            case "verification_code": Console.Write("(Telegram) Verification code: "); return Console.ReadLine();
+            case "api_id": return EnvironmentVariables.ApiId;
+            case "api_hash": return EnvironmentVariables.ApiHash;
+            case "password": return EnvironmentVariables.Password;
+            case "phone_number": return EnvironmentVariables.PhoneNumber;
+            case "verification_code": Console.Write("(Telegram) Enter verification code from Telegram Application: "); return Console.ReadLine();
+            default: return null;
+        } 
+#else
+        switch (what)
+        {
+            case "api_id": Console.Write("(Telegram) Enter api_id: "); return Console.ReadLine();
+            case "api_hash": Console.Write("(Telegram) Enter api_hash: "); return Console.ReadLine();
+            case "password": Console.Write("(Telegram) Enter password: "); return Console.ReadLine();
+            case "phone_number": Console.Write("(Telegram) Enter phone number with country code (+7): "); return Console.ReadLine();
+            case "verification_code": Console.Write("(Telegram) Enter verification code from Telegram Application: "); return Console.ReadLine();
             default: return null;
         }
+#endif
     };
-    
+
     WTelegram.Helpers.Log = (logLevel, message) =>
     {
-        var level = (LogLevel)logLevel;
-
-        if (level is LogLevel.Error or LogLevel.Critical)
-        {
-            logger.Log(level, message);
-        }
+#pragma warning disable CA2254
+        logger.Log((LogLevel)(logLevel - 1), message);
+#pragma warning restore CA2254
     };
     
     var client = new WTelegram.Client(
@@ -106,6 +120,8 @@ using (var host = builder.Build())
 
     _ = await client.LoginUserIfNeeded();
     _ = client.WithUpdateManager(updateRouter.Handle);
+    
+    logger.LogInformation("Telegram session saved");
     
     try
     { 

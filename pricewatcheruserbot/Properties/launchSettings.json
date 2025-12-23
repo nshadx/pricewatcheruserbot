@@ -6,8 +6,11 @@
       "dotnetRunMessages": true,
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development",
-        "TG_Session_FilePath": "session",
-        "Session_Storage": "browser-session"
+        
+        "TelegramSessionFilePath": "telegram-session",
+        "BrowserSessionFilePath": "browser-session",
+        "StorageDirectoryPath": null,
+        "DbConnectionString": "Data Source=app.db"
       }
     }
   }

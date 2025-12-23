@@ -14,53 +14,87 @@ public class OzonScrapper(
         var page = await browser.NewPageAsync();
         
         logger.LogInformation("Page init...");
+        
         await page.AddInitScriptAsync("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
-        await page.GotoAsync("https://ozon.ru");
+        await page.GotoAsync("https://ozon.ru", new PageGotoOptions() { WaitUntil = WaitUntilState.NetworkIdle });
+        
         logger.LogInformation("Page loaded");
+        await page.Debug_TakeScreenshot("ozon_authorization_page_loaded");
         
         try
         {
             PageObject pageObject = new(page);
 
             logger.LogInformation("Check for login requirement...");
-            
+
             var requiresLogin = await pageObject.RequiresLogin();
             if (requiresLogin)
             {
                 logger.LogInformation("Begin login...");
+                await page.Debug_TakeScreenshot("ozon_begin_login");
                 
-                await pageObject.ClickLogin();
+                await pageObject.OpenLoginForm();
 
                 logger.LogInformation("Phone number requested");
                 
                 var phoneNumber = configProvider("phone_number");
                 await pageObject.EnterPhoneNumber(phoneNumber);
                 
-                logger.LogInformation("Select code via phone authentication way...");
+                logger.LogInformation("Phone number entered");
+                await page.Debug_TakeScreenshot("ozon_phone_number_entered");
+                
+                logger.LogInformation("Submitting form...");
+                
                 await pageObject.LoginSubmit();
+                
+                logger.LogInformation("Form submitted");
+                
+                var isPhoneInvalid = await pageObject.IsPhoneNumberInvalid();
+                if (isPhoneInvalid)
+                {
+                    logger.LogError("Invalid phone number entered");
+                    return;
+                }
+                
+                logger.LogInformation("Select code via phone authentication way...");
+                
                 await pageObject.SelectAnotherLoginWay();
+                
+                logger.LogInformation("Code via phone authentication way selected");
+                await page.Debug_TakeScreenshot("ozon_another_way_of_authentication");
 
                 logger.LogInformation("Code requested");
                 
                 var code = configProvider("code");
                 await pageObject.EnterCode(code);
+                
+                logger.LogInformation("Code entered");
+                await page.Debug_TakeScreenshot("ozon_code_entered");
 
                 logger.LogInformation("Check for email verification requirement...");
                 
-                var requiresEmail = await pageObject.SendEmailVerification();
+                var requiresEmail = await pageObject.IsEmailVerificationRequired();
                 if (requiresEmail)
                 {
+                    await pageObject.SelectEmailVerification();
+                    
                     logger.LogInformation("Email verification requested");
                     
                     var emailCode = configProvider("email_code");
                     await pageObject.EnterCode(emailCode);
+                    
+                    logger.LogInformation("Email verification code entered");
+                    await page.Debug_TakeScreenshot("ozon_email_verification_code_entered");
                 }
 
                 if (!await pageObject.RequiresLogin())
                 {
                     logger.LogInformation("Successful authorization");
+                    await page.Debug_TakeScreenshot("ozon_successful_authorization");
                     
                     await browser.StorageStateAsync(new BrowserContextStorageStateOptions() { Path = Environment.GetEnvironmentVariable("Session_Storage") });
+                    
+                    logger.LogInformation("Session saved");
                 }
             }
         }
@@ -80,10 +114,13 @@ public class OzonScrapper(
         var page = await browser.NewPageAsync();
         
         logger.LogInformation("Page init...");
+        
         page.SetDefaultTimeout(15000);
         await page.AddInitScriptAsync("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
         await page.GotoAsync(url.ToString());
+        
         logger.LogInformation("Page loaded");
+        await page.Debug_TakeScreenshot("ozon_price_page_loaded");
         
         try
         {
@@ -94,7 +131,8 @@ public class OzonScrapper(
             var priceString = await pageObject.GetPrice();
             var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
 
-            logger.LogInformation("Price was received successfully");
+            logger.LogInformation("Price was received successfully"); 
+            await page.Debug_TakeScreenshot("ozon_price_received");
             
             return priceValue;
         }
@@ -106,18 +144,22 @@ public class OzonScrapper(
 
     private class PageObject(IPage page)
     {
-        public async Task<bool> SendEmailVerification()
+        public async Task<bool> IsEmailVerificationRequired()
         {
             var locator = page
                 .FrameLocator("#authFrame")
                 .Locator("//div[contains(@data-widget, 'loginOrRegistration')]/descendant::button[@type='submit']").First;
 
-            try
-            {
-                await locator.ClickAsync();
-                return true;
-            }
-            catch { return false; }
+            return await locator.IsVisibleAsync();
+        }
+        
+        public async Task SelectEmailVerification()
+        {
+            var locator = page
+                .FrameLocator("#authFrame")
+                .Locator("//div[contains(@data-widget, 'loginOrRegistration')]/descendant::button[@type='submit']").First;
+
+            await locator.ClickAsync();
         }
         
         public async Task EnterCode(string code)
@@ -143,7 +185,7 @@ public class OzonScrapper(
             var locator = page
                 .FrameLocator("#authFrame")
                 .Locator("//div[contains(@data-widget, 'loginOrRegistration')]/descendant::button[@type='submit']").First;
-
+            
             await locator.ClickAsync();
         }
         
@@ -153,40 +195,35 @@ public class OzonScrapper(
                 .FrameLocator("#authFrame")
                 .Locator("//div[contains(@data-widget, 'loginOrRegistration')]/descendant::input[contains(@type, 'tel')]").First;
             
-            await locator.PressSequentiallyAsync(phoneNumber);
+            await locator.FillAsync(phoneNumber);
+        }
+
+        public async Task<bool> IsPhoneNumberInvalid()
+        {
+            var locator = page
+                .FrameLocator("#authFrame")
+                .Locator("//p[contains(text(), 'Некорректный формат телефона')]").First;
+
+            return await locator.IsVisibleAsync();
         }
 
         public async Task<bool> RequiresLogin()
         {
             var locator = page.Locator("//div[contains(@data-widget, 'profileMenuAnonymous')]").First;
 
-            try
-            {
-                await locator.WaitForAsync(new LocatorWaitForOptions() { State = WaitForSelectorState.Visible });
-                return true;
-            } catch { return false; }
+            return await locator.IsVisibleAsync() && !await locator.IsDisabledAsync();
         }
         
-        public async Task ClickLogin()
+        public async Task OpenLoginForm()
         {
             var loginButton = page
                 .Locator("//div[contains(@data-widget, 'profileMenuAnonymous')]")
                 .First;
-            var locator = page
-                .FrameLocator("#authFrame")
-                .Locator("//div[contains(@data-widget, 'loginOrRegistration')]").First;
             
-            while (!await locator.IsVisibleAsync())
-            {
-                try
-                {
-                    await loginButton.ClickAsync();
-                }
-                catch { break; }
-            }
+            await loginButton.ClickAsync();
         }
         
-        public async Task<string> GetPrice()
+        public async Task<string?> GetPrice()
         {
             var locator = page
                 .Locator("//div[contains(@data-widget, 'webPrice')]/descendant::span").First
@@ -194,7 +231,7 @@ public class OzonScrapper(
                     page.Locator("//div/child::span[text()='c Ozon Картой']/../div/span")
                 ).First;
             
-            var result = await locator.TextContentAsync() ?? throw new InvalidOperationException();
+            var result = await locator.TextContentAsync();
 
             return result;
         }

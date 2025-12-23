@@ -2,7 +2,10 @@
 
 namespace pricewatcheruserbot.Scrappers.Impl;
 
-public class YandexMarketScrapper(BrowserService browserService) : IScrapper
+public class YandexMarketScrapper(
+    ILogger<YandexMarketScrapper> logger,
+    BrowserService browserService
+) : IScrapper
 {
     public Task Authorize()
     {
@@ -14,8 +17,13 @@ public class YandexMarketScrapper(BrowserService browserService) : IScrapper
         var browser = await browserService.GetBrowserContext();
         var page = await browser.NewPageAsync();
         
+        logger.LogInformation("Page init...");
+        
         await page.AddInitScriptAsync("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
         await page.GotoAsync(url.ToString());
+        
+        logger.LogInformation("Page loaded");
+        await page.Debug_TakeScreenshot("yandex_market_price_page_loaded");
         
         try
         {
@@ -23,10 +31,20 @@ public class YandexMarketScrapper(BrowserService browserService) : IScrapper
 
             PageObject pageObject = new(page);
 
+            logger.LogInformation("Try to close login box...");
+            
             await pageObject.CloseLoginBox();
+            
+            logger.LogInformation("Login box closed");
+            await page.Debug_TakeScreenshot("yandex_market_login_box_closed");
+            
+            logger.LogInformation("Begin price selecting...");
             
             var priceString = await pageObject.GetPrice();
             var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
+
+            logger.LogInformation("Price was received successfully"); 
+            await page.Debug_TakeScreenshot("yandex_market_price_received");
 
             return priceValue;
         }
@@ -58,12 +76,12 @@ public class YandexMarketScrapper(BrowserService browserService) : IScrapper
             }
             catch { }
         }
-        public async Task<string> GetPrice()
+        public async Task<string?> GetPrice()
         {
             var locator = page
                 .Locator("//span[contains(@data-auto, 'snippet-price-current')]/descendant::span[1]").First;
 
-            var result = await locator.TextContentAsync() ?? throw new InvalidOperationException();
+            var result = await locator.TextContentAsync();
 
             return result;
         }
