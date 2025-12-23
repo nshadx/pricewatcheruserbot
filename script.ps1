@@ -69,42 +69,13 @@ if ($containerExists -and $imageChanged) {
     docker rm $ContainerName | Out-Null
 }
 
-$sessionExists = docker run --rm `
+Write-Host "==> Контейнер запускается В ЭТОМ ОКНЕ"
+Write-Host "==> После ввода кода Telegram нажми:"
+Write-Host "==> Ctrl+P, затем Ctrl+Q (НЕ Ctrl+C!)"
+Write-Host ""
+    
+docker run -it `
+    --name $ContainerName `
     -v ${DataVolume}:/data `
-    busybox `
-    sh -c "test -f /data/session" 2>$null
-
-if ($LASTEXITCODE -ne 0) {
-
-    Write-Host ""
-    Write-Host "==> Файл session в volume не найден. Введите данные для бота:"
-
-    $apiId = Read-Host "Enter ApiId"
-    $apiHash = Read-Host "Enter ApiHash"
-    $phoneNumber = Read-Host "Enter phone number with country code (+7)"
-    $password = Read-Secret "Enter 2FA password (hidden)"
-
-    Write-Host ""
-    Write-Host "==> Контейнер запускается В ЭТОМ ОКНЕ"
-    Write-Host "==> После ввода кода Telegram нажми:"
-    Write-Host "==> Ctrl+P, затем Ctrl+Q (НЕ Ctrl+C!)"
-    Write-Host ""
-
-    docker run -it `
-        --name $ContainerName `
-        --restart unless-stopped `
-        -e BotCredentials__ApiId="$apiId" `
-        -e BotCredentials__ApiHash="$apiHash" `
-        -e BotCredentials__PhoneNumber="$phoneNumber" `
-        -e BotCredentials__Password="$password" `
-        -v ${DataVolume}:/data `
-        $ImageName
-
-} else {
-    Write-Host "==> Файл session найден в volume. Подключаюсь..."
-    docker run -it `
-        --name $ContainerName `
-        -v ${DataVolume}:/data `
-        $ImageName
-}
+    $ImageName
 

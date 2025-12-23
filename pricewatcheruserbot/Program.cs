@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using pricewatcheruserbot;
 using pricewatcheruserbot.Commands;
-using pricewatcheruserbot.Configuration;
 using pricewatcheruserbot.Entities;
 using pricewatcheruserbot.Scrappers;
 using pricewatcheruserbot.Scrappers.Impl;
@@ -11,11 +10,9 @@ using Channel = System.Threading.Channels.Channel;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.Configure<BotCredentials>(builder.Configuration.GetRequiredSection(nameof(BotCredentials)));
 builder.Services.AddSingleton<UpdateHandler>();
 builder.Services.AddSingleton(provider =>
 {
-    var botCredentials = provider.GetRequiredService<IOptions<BotCredentials>>().Value;
     var logger = provider.GetRequiredService<ILogger<WTelegram.Client>>();
 
     var file = File.Open(Environment.GetEnvironmentVariable("TG_Session_FilePath") ?? throw new ArgumentException("you should provide session file path"), FileMode.OpenOrCreate);
@@ -24,10 +21,10 @@ builder.Services.AddSingleton(provider =>
     {
         switch (what)
         {
-            case "api_id": return botCredentials.ApiId;
-            case "api_hash": return botCredentials.ApiHash;
-            case "password": return botCredentials.Password;
-            case "phone_number": return botCredentials.PhoneNumber;
+            case "api_id": Console.Write("ApiId: "); return Console.ReadLine();
+            case "api_hash": Console.Write("ApiHash: "); return Console.ReadLine();
+            case "password": Console.Write("Password: "); return Console.ReadLine();
+            case "phone_number": Console.Write("Phone number with country code (+7): "); return Console.ReadLine();
             case "verification_code": Console.Write("Verification code: "); return Console.ReadLine();
             default: return null;
         }
