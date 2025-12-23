@@ -27,5 +27,6 @@ RUN apt-get install xauth -y
 VOLUME /data
 ENV ConnectionStrings__DbConnection="Data Source = /data/app.db"
 ENV TG_Session_FilePath="/data/session"
+ENV Session_Storage="/data/browser-session"
 ENV Logging__LogLevel__Default="Error" 
 CMD ["/bin/sh", "-c", "/usr/bin/xvfb-run --server-args='-screen 0, 1920x1080x24' dotnet pricewatcheruserbot.dll", ""]

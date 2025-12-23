@@ -42,6 +42,21 @@ builder.Services.AddSingleton(provider =>
     
     return client;
 });
+builder.Services.AddSingleton(provider =>
+{
+    Func<string, string> configProvider = what =>
+    {
+        switch (what)
+        {
+            case "phone_number": Console.Write("Phone number: "); return Console.ReadLine()!;
+            case "code": Console.Write("Code: "); return Console.ReadLine()!;
+            case "email_code": Console.Write("Email code: "); return Console.ReadLine()!;
+            default: return null!;
+        }
+    };
+
+    return configProvider;
+});
 
 builder.Services.AddDbContext<AppDbContext>(x =>
 {
@@ -55,9 +70,9 @@ builder.Services.AddScoped<AddCommand.Handler>();
 builder.Services.AddScoped<ListCommand.Handler>();
 builder.Services.AddScoped<RemoveCommand.Handler>();
 
-builder.Services.AddSingleton<OzonScrapper>();
-builder.Services.AddSingleton<WildberriesScrapper>();
-builder.Services.AddSingleton<YandexMarketScrapper>();
+builder.Services.AddSingleton<IScrapper, OzonScrapper>();
+builder.Services.AddSingleton<IScrapper, WildberriesScrapper>();
+builder.Services.AddSingleton<IScrapper, YandexMarketScrapper>();
 
 builder.Services.AddSingleton<BrowserService>();
 builder.Services.AddSingleton<ScrapperFactory>();
@@ -82,6 +97,13 @@ await using (var scope = host.Services.CreateAsyncScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     
     await dbContext.Database.EnsureCreatedAsync();
+}
+
+var scrappers = host.Services.GetServices<IScrapper>();
+
+foreach (var scrapper in scrappers)
+{
+    await scrapper.Authorize();
 }
 
 await host.RunAsync();

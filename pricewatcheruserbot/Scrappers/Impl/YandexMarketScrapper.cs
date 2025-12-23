@@ -4,6 +4,11 @@ namespace pricewatcheruserbot.Scrappers.Impl;
 
 public class YandexMarketScrapper(BrowserService browserService) : IScrapper
 {
+    public Task Authorize()
+    {
+        return Task.CompletedTask;
+    }
+
     public async Task<double> GetPrice(Uri url)
     {
         var browser = await browserService.GetBrowserContext();

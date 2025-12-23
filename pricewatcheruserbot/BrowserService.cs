@@ -22,7 +22,13 @@ public class BrowserService : IAsyncDisposable
             var instance = await Playwright.CreateAsync();
             var browser = await instance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions() { Headless = false, Args = ["--disable-blink-features=AutomationControlled", "--start-minimized"] });
 
-            _browserContext = await browser.NewContextAsync();
+            string? storageStatePath = null;
+            if (File.Exists(Environment.GetEnvironmentVariable("Session_Storage")))
+            {
+                storageStatePath = Environment.GetEnvironmentVariable("Session_Storage");
+            }
+            
+            _browserContext = await browser.NewContextAsync(new BrowserNewContextOptions() { StorageStatePath = storageStatePath });
         }
     }
 

@@ -5,7 +5,9 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "environmentVariables": {
-        "DOTNET_ENVIRONMENT": "Development"
+        "DOTNET_ENVIRONMENT": "Development",
+        "TG_Session_FilePath": "session",
+        "Session_Storage": "browser-session"
       }
     }
   }
