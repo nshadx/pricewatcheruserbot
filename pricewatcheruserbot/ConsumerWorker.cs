@@ -28,6 +28,7 @@ public class ConsumerWorker(
                 {
                     try
                     {
+                        logger.LogInformation("start: {workerItem}", workerItem);
                         await HandleWorkerItem(workerItem);
                     }
                     catch (Exception ex)
@@ -48,24 +49,31 @@ public class ConsumerWorker(
             var scrapperFactory = scope.ServiceProvider.GetRequiredService<ScrapperFactory>();
             var memoryCache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
             var client = scope.ServiceProvider.GetRequiredService<WTelegram.Client>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<ConsumerWorker>>();
             
             var scrapper = scrapperFactory.GetScrapper(workerItem.Url);
             var price = await scrapper.GetPrice(workerItem.Url);
 
+            logger.LogInformation("price received for {workerItem}", workerItem);
+            
             if (memoryCache.TryGetValue<double>(workerItem.Id, out var previousPrice))
             {
-                if (price < previousPrice)
+                var difference = previousPrice - price;
+                
+                if (difference > 0)
                 {
-                    var difference = previousPrice - price;
                     var text = $"{GenerateRandomEmojis(3)}: The item's ({workerItem}) price has dropped by {difference}";
                             
                     await client.SendMessageAsync(
                         peer: new InputPeerSelf(),
                         text: text
                     );
+
+                    logger.LogInformation("price dropped by {difference} for {workerItem}", difference, workerItem);
                 }
             }
 
+            logger.LogInformation("price updated for {workerItem}", workerItem);
             memoryCache.Set(workerItem.Id, price);
         }
     }

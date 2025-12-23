@@ -12,8 +12,7 @@ public class OzonScrapper(
     {
         var browser = await browserService.GetBrowserContext();
         var page = await browser.NewPageAsync();
-
-        page.SetDefaultTimeout(5000);
+        
         await page.AddInitScriptAsync("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
         await page.GotoAsync("https://ozon.ru");
 
