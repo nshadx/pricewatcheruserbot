@@ -107,10 +107,11 @@ using (var host = builder.Build())
 
         logger.LogInformation("Success authorization in services");
     }
-    catch
+    catch (Exception ex)
     {
-        logger.LogError("Failed to authorization in services");
+        logger.LogError(ex, "Failed to authorization in services");
         await host.StopAsync();
+        return;
     }
 
     await host.RunAsync();

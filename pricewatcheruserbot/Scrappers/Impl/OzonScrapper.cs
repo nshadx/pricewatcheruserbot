@@ -3,6 +3,7 @@
 namespace pricewatcheruserbot.Scrappers.Impl;
 
 public class OzonScrapper(
+    ILogger<OzonScrapper> logger,
     BrowserService browserService,
     [FromKeyedServices("ozon")] Func<string, string> configProvider
 ) : IScrapper
@@ -14,7 +15,7 @@ public class OzonScrapper(
 
         page.SetDefaultTimeout(5000);
         await page.GotoAsync("https://ozon.ru");
-        
+
         try
         {
             PageObject pageObject = new(page);
@@ -23,12 +24,12 @@ public class OzonScrapper(
             if (requiresLogin)
             {
                 await pageObject.ClickLogin();
-                
+
                 var phoneNumber = configProvider("phone_number");
                 await pageObject.EnterPhoneNumber(phoneNumber);
                 await pageObject.LoginSubmit();
                 await pageObject.SelectAnotherLoginWay();
-                
+
                 var code = configProvider("code");
                 await pageObject.EnterCode(code);
 
@@ -44,6 +45,10 @@ public class OzonScrapper(
                     await browser.StorageStateAsync(new BrowserContextStorageStateOptions() { Path = Environment.GetEnvironmentVariable("Session_Storage") });
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "failed to authorize");
         }
         finally
         {
