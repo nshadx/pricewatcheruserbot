@@ -92,26 +92,25 @@ using (var host = builder.Build())
     await using (var scope = host.Services.CreateAsyncScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    
+        var scrappers = scope.ServiceProvider.GetServices<IScrapper>();
+
         await dbContext.Database.EnsureCreatedAsync();
-    }
+        
+        try
+        { 
+            foreach (var scrapper in scrappers)
+            {
+                await scrapper.Authorize();
+            }
 
-    var scrappers = host.Services.GetServices<IScrapper>();
-
-    try
-    {
-        foreach (var scrapper in scrappers)
-        {
-            await scrapper.Authorize();
+            logger.LogInformation("Success authorization in services");
         }
-
-        logger.LogInformation("Success authorization in services");
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Failed to authorization in services");
-        await host.StopAsync();
-        return;
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to authorization in services");
+            await host.StopAsync();
+            return;
+        }
     }
 
     await host.RunAsync();
