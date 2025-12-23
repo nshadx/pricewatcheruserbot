@@ -19,8 +19,8 @@ COPY --from=build /app/build/playwright.ps1 ./
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-RUN pwsh ./playwright.ps1 install chromium
-RUN pwsh ./playwright.ps1 install-deps chromium
+RUN pwsh ./playwright.ps1 install firefox
+RUN pwsh ./playwright.ps1 install-deps firefox
 RUN apt-get update
 RUN apt-get install xvfb -y
 RUN apt-get install xauth -y

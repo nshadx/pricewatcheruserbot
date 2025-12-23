@@ -20,7 +20,7 @@ public class BrowserService : IAsyncDisposable
         if (_browserContext is null)
         {
             var instance = await Playwright.CreateAsync();
-            var browser = await instance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions() { Headless = false });
+            var browser = await instance.Firefox.LaunchAsync(new BrowserTypeLaunchOptions() { Headless = false });
 
             string? storageStatePath = null;
             if (File.Exists(Environment.GetEnvironmentVariable("Session_Storage")))
