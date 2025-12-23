@@ -14,10 +14,11 @@ public class WildberriesScrapper(BrowserService browserService) : IScrapper
         var browser = await browserService.GetBrowserContext();
         var page = await browser.NewPageAsync();
         
+        await page.GotoAsync(url.ToString());
+        await page.AddInitScriptAsync("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
+        
         try
         {
-            await page.GotoAsync(url.ToString());
-
             PageObject pageObject = new(page);
             var priceString = await pageObject.GetPrice();
             var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);

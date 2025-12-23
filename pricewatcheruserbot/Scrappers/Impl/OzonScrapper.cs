@@ -14,7 +14,8 @@ public class OzonScrapper(
         var page = await browser.NewPageAsync();
 
         page.SetDefaultTimeout(5000);
-        await page.GotoAsync("https://ozon.ru", new PageGotoOptions() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+        await page.GotoAsync("https://ozon.ru");
+        await page.AddInitScriptAsync("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
 
         try
         {
@@ -63,6 +64,7 @@ public class OzonScrapper(
         
         page.SetDefaultTimeout(5000);
         await page.GotoAsync(url.ToString());
+        await page.AddInitScriptAsync("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
         
         try
         {
