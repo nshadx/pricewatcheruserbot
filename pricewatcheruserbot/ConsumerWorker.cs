@@ -22,7 +22,7 @@ public class ConsumerWorker(
             var enumerable = channel.ReadAllAsync(stoppingToken);
             
             await Parallel.ForEachAsync(
-                source: enumerable,
+                source: enumerable.Take(Environment.ProcessorCount),
                 parallelOptions: new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount },
                 body: async (workerItem, _) =>
                 {
