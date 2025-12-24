@@ -5,13 +5,10 @@ using pricewatcheruserbot.Commands;
 using pricewatcheruserbot.Entities;
 using pricewatcheruserbot.Scrappers;
 using pricewatcheruserbot.Scrappers.Impl;
+using pricewatcheruserbot.UserInputProvider;
+using pricewatcheruserbot.UserInputProvider.Impl;
 using TL;
 using Channel = System.Threading.Channels.Channel;
-
-#if DEBUG
-DotNetEnv.Env.Load();
-DotNetEnv.Env.TraversePath();
-#endif
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -19,57 +16,34 @@ builder.Services.AddSingleton<UpdateHandler>();
 builder.Services.AddSingleton(provider =>
 {
     var logger = provider.GetRequiredService<ILogger<WTelegram.Client>>();
-
-    var session = File.Open(EnvironmentVariables.TelegramSessionFilePath, FileMode.OpenOrCreate);
-
-    Func<string, string?> config = what =>
-    {
-#if DEBUG
-        switch (what)
-        {
-            case "api_id": return EnvironmentVariables.ApiId;
-            case "api_hash": return EnvironmentVariables.ApiHash;
-            case "password": return EnvironmentVariables.Password;
-            case "phone_number": return EnvironmentVariables.PhoneNumber;
-            case "verification_code": Console.WriteLine("(Telegram) Enter verification code from Telegram Application: "); return Console.ReadLine();
-            default: return null;
-        } 
-#else
-        switch (what)
-        {
-            case "api_id": Console.Write("(Telegram) Enter api_id: "); return Console.ReadLine();
-            case "api_hash": Console.Write("(Telegram) Enter api_hash: "); return Console.ReadLine();
-            case "password": Console.Write("(Telegram) Enter password: "); return Console.ReadLine();
-            case "phone_number": Console.Write("(Telegram) Enter phone number with country code (+7): "); return Console.ReadLine();
-            case "verification_code": Console.Write("(Telegram) Enter verification code from Telegram Application: "); return Console.ReadLine();
-            default: return null;
-        }
-#endif
-    };
-
+    var userInputProvider = provider.GetRequiredService<IUserInputProvider>();
+    
     WTelegram.Helpers.Log = (logLevel, message) =>
     {
 #pragma warning disable CA2254
         logger.Log((LogLevel)(logLevel - 1), message);
 #pragma warning restore CA2254
     };
-    
+
     var client = new WTelegram.Client(
-        config,
-        session
+        userInputProvider.Telegram_GetApiId().Result,
+        userInputProvider.Telegram_GetApiHash().Result,
+        EnvironmentVariables.TelegramSessionFilePath
     );
     
     return client;
 });
-builder.Services.AddKeyedSingleton("ozon", (Func<string, string>)(what =>
+builder.Services.AddKeyedSingleton("ozon", (provider, _) => (Func<string, Task<string>>)(async what =>
     {
-        switch (what)
+        var userInputProvider = provider.GetRequiredService<IUserInputProvider>();
+
+        return what switch
         {
-            case "phone_number": Console.WriteLine("(Ozon) Phone number without country code: "); return Console.ReadLine()!;
-            case "code": Console.WriteLine("(Ozon) Authentication Code: "); return Console.ReadLine()!;
-            case "email_code": Console.WriteLine("(Ozon) Email authentication code: "); return Console.ReadLine()!;
-            default: return null!;
-        }
+            "phone_number" => await userInputProvider.Ozon_GetPhoneNumber(),
+            "phone_verification_code" => await userInputProvider.Ozon_GetPhoneVerificationCode(),
+            "email_verification_code" => await userInputProvider.Ozon_GetEmailVerificationCode(),
+            _ => throw new InvalidOperationException()
+        };
     })
 );
 
@@ -111,15 +85,41 @@ builder.Services.AddSingleton<ChannelWriter<WorkerItem>>(resolver =>
 builder.Services.AddHostedService<ProducerWorker>();
 builder.Services.AddHostedService<ConsumerWorker>();
 
+if (builder.Environment.IsDevelopment())
+{
+    DotNetEnv.Env.Load();
+    DotNetEnv.Env.TraversePath();
+    
+    builder.Services.AddSingleton<IUserInputProvider, EnvUserInputProvider>();
+}
+else
+{
+    builder.Services.AddSingleton<IUserInputProvider, FileUserInputProvider>();
+}
+
 using (var host = builder.Build())
 {
     var client = host.Services.GetRequiredService<WTelegram.Client>();
     var updateRouter = host.Services.GetRequiredService<UpdateHandler>();
     var logger = host.Services.GetRequiredService<ILogger<Program>>();
     var scrappers = host.Services.GetServices<IScrapper>();
-
-    _ = await client.LoginUserIfNeeded();
+    var userInputProvider = host.Services.GetRequiredService<IUserInputProvider>();
+    
     _ = client.WithUpdateManager(updateRouter.Handle);
+    await DoLogin(await userInputProvider.Telegram_GetPhoneNumber());
+    
+    async Task DoLogin(string loginInfo)
+    {
+        while (client.User is null)
+        {
+            loginInfo = await client.Login(loginInfo) switch
+            {
+                "password" => await userInputProvider.Telegram_GetPassword(),
+                "verification_code" => await userInputProvider.Telegram_GetVerificationCode(),
+                _ => null!
+            };
+        }
+    }
     
     logger.LogInformation("Telegram session saved");
     

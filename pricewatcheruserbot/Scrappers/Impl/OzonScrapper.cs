@@ -5,7 +5,7 @@ namespace pricewatcheruserbot.Scrappers.Impl;
 public class OzonScrapper(
     ILogger<OzonScrapper> logger,
     BrowserService browserService,
-    [FromKeyedServices("ozon")] Func<string, string> configProvider
+    [FromKeyedServices("ozon")] Func<string, Task<string>> configProvider
 ) : IScrapper
 {
     public async Task Authorize()
@@ -37,7 +37,7 @@ public class OzonScrapper(
 
                 logger.LogInformation("Phone number requested");
                 
-                var phoneNumber = configProvider("phone_number");
+                var phoneNumber = await configProvider("phone_number");
                 await pageObject.EnterPhoneNumber(phoneNumber);
                 
                 logger.LogInformation("Phone number entered");
@@ -65,7 +65,7 @@ public class OzonScrapper(
 
                 logger.LogInformation("Code requested");
                 
-                var code = configProvider("code");
+                var code = await configProvider("phone_verification_code");
                 await pageObject.EnterCode(code);
                 
                 logger.LogInformation("Code entered");
@@ -80,7 +80,7 @@ public class OzonScrapper(
                     
                     logger.LogInformation("Email verification requested");
                     
-                    var emailCode = configProvider("email_code");
+                    var emailCode = await configProvider("email_verification_code");
                     await pageObject.EnterCode(emailCode);
                     
                     logger.LogInformation("Email verification code entered");

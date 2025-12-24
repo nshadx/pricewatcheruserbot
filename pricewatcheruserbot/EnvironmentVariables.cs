@@ -8,10 +8,11 @@ public static class EnvironmentVariables
     public static string BrowserSessionFilePath { get; } = GetRequiredEnvironmentVariable("BrowserSessionFilePath");
 
 #if DEBUG
-    public static string PhoneNumber { get; } = GetRequiredEnvironmentVariable("phone_number");
-    public static string ApiId { get; } = GetRequiredEnvironmentVariable("api_id");
-    public static string ApiHash { get; } = GetRequiredEnvironmentVariable("api_hash");
-    public static string Password { get; } = GetRequiredEnvironmentVariable("password");
+    public static int TelegramApiId { get; } = int.Parse(GetRequiredEnvironmentVariable("TelegramApiId"));
+    public static string TelegramPhoneNumber { get; } = GetRequiredEnvironmentVariable("TelegramPhoneNumber");
+    public static string TelegramApiHash { get; } = GetRequiredEnvironmentVariable("TelegramApiHash");
+    public static string TelegramPassword { get; } = GetRequiredEnvironmentVariable("TelegramPassword");
+    public static string OzonPhoneNumber { get; } = GetRequiredEnvironmentVariable("OzonPhoneNumber");
 #endif
     
     private static string GetRequiredEnvironmentVariable(string name) => Environment.GetEnvironmentVariable(name) ?? throw new InvalidOperationException($"{name} is not set");

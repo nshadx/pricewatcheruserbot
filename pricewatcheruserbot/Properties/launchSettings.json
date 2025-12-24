@@ -9,8 +9,8 @@
         
         "TelegramSessionFilePath": "telegram-session",
         "BrowserSessionFilePath": "browser-session",
-        "StorageDirectoryPath": null,
-        "DbConnectionString": "Data Source=app.db"
+        "DbConnectionString": "Data Source=app.db",
+        "StorageDirectoryPath": null
       }
     }
   }
