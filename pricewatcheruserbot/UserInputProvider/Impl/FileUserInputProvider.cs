@@ -1,44 +1,76 @@
-﻿namespace pricewatcheruserbot.UserInputProvider.Impl;
+﻿using System.Text.Json;
+
+namespace pricewatcheruserbot.UserInputProvider.Impl;
 
 public class FileUserInputProvider : IUserInputProvider
 {
-    public Task<int> Telegram_GetApiId()
+    private const string Json = """
+                                {
+                                    "TelegramApiId": "",
+                                    "TelegramApiHash": "",
+                                    "TelegramPassword": "",
+                                    "TelegramPhoneNumber": "",
+                                    "TelegramVerificationCode": "",
+                                    "OzonPhoneNumber": "",
+                                    "OzonEmailVerificationCode": "",
+                                    "OzonPhoneVerificationCode": ""
+                                }
+                                """;
+    
+    private static readonly string JsonFilePath = Path.Combine(EnvironmentVariables.StorageDirectoryPath, "exchanger.json");
+    
+    public async Task Init()
     {
-        throw new NotImplementedException();
+        await File.WriteAllTextAsync(JsonFilePath, Json);
     }
 
-    public Task<string> Telegram_GetApiHash()
+    public async Task<int> Telegram_GetApiId()
     {
-        throw new NotImplementedException();
+        var text = await WaitForProperty("TelegramApiId");
+
+        return int.Parse(text);
     }
 
-    public Task<string> Telegram_GetPassword()
-    {
-        throw new NotImplementedException();
-    }
+    public Task<string> Telegram_GetApiHash() => WaitForProperty("TelegramApiHash");
 
-    public Task<string> Telegram_GetPhoneNumber()
-    {
-        throw new NotImplementedException();
-    }
+    public Task<string> Telegram_GetPassword() => WaitForProperty("TelegramPassword");
 
-    public Task<string> Telegram_GetVerificationCode()
-    {
-        throw new NotImplementedException();
-    }
+    public Task<string> Telegram_GetPhoneNumber() => WaitForProperty("TelegramPhoneNumber");
 
-    public Task<string> Ozon_GetPhoneNumber()
-    {
-        throw new NotImplementedException();
-    }
+    public Task<string> Telegram_GetVerificationCode() => WaitForProperty("TelegramVerificationCode");
 
-    public Task<string> Ozon_GetEmailVerificationCode()
-    {
-        throw new NotImplementedException();
-    }
+    public Task<string> Ozon_GetPhoneNumber() => WaitForProperty("OzonPhoneNumber");
 
-    public Task<string> Ozon_GetPhoneVerificationCode()
+    public Task<string> Ozon_GetEmailVerificationCode() => WaitForProperty("OzonEmailVerificationCode");
+
+    public Task<string> Ozon_GetPhoneVerificationCode() => WaitForProperty("OzonPhoneVerificationCode");
+
+    private async Task<string> WaitForProperty(string name)
     {
-        throw new NotImplementedException();
+        var dict = await Read();
+        var value = dict[name];
+        while (string.IsNullOrEmpty(value))
+        {
+            dict = await Read();
+            value = dict[name];
+            await Task.Delay(1000);
+        }
+        
+        async Task<Dictionary<string, string>> Read()
+        {
+            try
+            {
+                var text = await File.ReadAllTextAsync(JsonFilePath);
+                var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(text)!;
+
+                return dict;
+            }
+            catch
+            {
+                return [];
+            }
+        }
+
+        return value;
     }
 }

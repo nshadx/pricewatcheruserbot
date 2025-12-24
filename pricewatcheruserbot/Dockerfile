@@ -19,8 +19,8 @@ COPY --from=build /app/build/playwright.ps1 ./
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-RUN pwsh ./playwright.ps1 install firefox
-RUN pwsh ./playwright.ps1 install-deps firefox
+RUN pwsh ./playwright.ps1 install chrome
+RUN pwsh ./playwright.ps1 install-deps chrome
 RUN apt-get update
 RUN apt-get install xvfb -y
 RUN apt-get install xauth -y
@@ -29,4 +29,4 @@ ENV DbConnectionString="Data Source = /data/app.db"
 ENV TelegramSessionFilePath="/data/telegram-session"
 ENV BrowserSessionFilePath="/data/browser-session"
 ENV StorageDirectoryPath="/data/"
-CMD ["/bin/sh", "-c", "/usr/bin/xvfb-run --server-args='-screen 0, 1920x1080x24' dotnet pricewatcheruserbot.dll", ""]
+CMD ["dotnet pricewatcheruserbot.dll"]

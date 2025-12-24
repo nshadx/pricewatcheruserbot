@@ -1,7 +1,16 @@
-﻿namespace pricewatcheruserbot.UserInputProvider.Impl;
+﻿#if DEBUG
+namespace pricewatcheruserbot.UserInputProvider.Impl;
 
 public class EnvUserInputProvider : IUserInputProvider
 {
+    public Task Init()
+    {
+        DotNetEnv.Env.Load();
+        DotNetEnv.Env.TraversePath();
+
+        return Task.CompletedTask;
+    }
+
     public Task<int> Telegram_GetApiId() => Task.FromResult(EnvironmentVariables.TelegramApiId);
 
     public Task<string> Telegram_GetApiHash() => Task.FromResult(EnvironmentVariables.TelegramApiHash);
@@ -32,3 +41,4 @@ public class EnvUserInputProvider : IUserInputProvider
         return Task.FromResult(result);
     }
 }
+#endif

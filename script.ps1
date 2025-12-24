@@ -2,9 +2,7 @@
     [string]$RepoUrl = "https://github.com/nshadx/pricewatcheruserbot",
 
     [string]$ImageName = "pricewatcheruserbot",
-    [string]$ContainerName = "pricewatcheruserbot",
-
-    [string]$DataVolume = "pricewatcher_data"
+    [string]$ContainerName = "pricewatcheruserbot"
 )
 
 # ===== Проверки =====
@@ -69,13 +67,8 @@ if ($containerExists -and $imageChanged) {
     docker rm $ContainerName | Out-Null
 }
 
-Write-Host "==> Контейнер запускается В ЭТОМ ОКНЕ"
-Write-Host "==> После ввода кода Telegram нажми:"
-Write-Host "==> Ctrl+P, затем Ctrl+Q (НЕ Ctrl+C!)"
-Write-Host ""
-    
-docker run -it `
+docker run -d `
     --name $ContainerName `
-    -v ${DataVolume}:/data `
+    -v ${RepoPath}:/data `
     $ImageName
 

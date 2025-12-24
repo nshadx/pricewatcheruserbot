@@ -15,7 +15,10 @@ public class OzonScrapper(
         
         logger.LogInformation("Page init...");
         
-        await page.AddInitScriptAsync("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
+        await page.AddInitScriptAsync("""
+                                      delete Object.getPrototypeOf(navigator).webdriver;
+                                      window.navigator.chrome = { runtime: {} };
+                                      """);
         await page.GotoAsync("https://ozon.ru", new PageGotoOptions() { WaitUntil = WaitUntilState.NetworkIdle });
         
         logger.LogInformation("Page loaded");
@@ -28,6 +31,9 @@ public class OzonScrapper(
             logger.LogInformation("Check for login requirement...");
 
             var requiresLogin = await pageObject.RequiresLogin();
+            logger.LogInformation("Login requirement check passed");
+            await page.Debug_TakeScreenshot("ozon_login_requirement_check");
+            
             if (requiresLogin)
             {
                 logger.LogInformation("Begin login...");
@@ -87,15 +93,12 @@ public class OzonScrapper(
                     await page.Debug_TakeScreenshot("ozon_email_verification_code_entered");
                 }
 
-                if (!await pageObject.RequiresLogin())
-                {
-                    logger.LogInformation("Successful authorization");
-                    await page.Debug_TakeScreenshot("ozon_successful_authorization");
+                logger.LogInformation("Successful authorization");
+                await page.Debug_TakeScreenshot("ozon_successful_authorization");
+
+                await browser.StorageStateAsync(new BrowserContextStorageStateOptions() { Path = EnvironmentVariables.BrowserSessionFilePath });
                     
-                    await browser.StorageStateAsync(new BrowserContextStorageStateOptions() { Path = Environment.GetEnvironmentVariable("Session_Storage") });
-                    
-                    logger.LogInformation("Session saved");
-                }
+                logger.LogInformation("Session saved");
             }
         }
         catch (Exception ex)
@@ -116,7 +119,10 @@ public class OzonScrapper(
         logger.LogInformation("Page init...");
         
         page.SetDefaultTimeout(15000);
-        await page.AddInitScriptAsync("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
+        await page.AddInitScriptAsync("""
+                                      delete Object.getPrototypeOf(navigator).webdriver;
+                                      window.navigator.chrome = { runtime: {} };
+                                      """);
         await page.GotoAsync(url.ToString());
         
         logger.LogInformation("Page loaded");
@@ -175,7 +181,8 @@ public class OzonScrapper(
         {
             var locator = page
                 .FrameLocator("#authFrame")
-                .Locator("//div[contains(@data-widget, 'loginOrRegistration')]/descendant::button/div[contains(text(), 'Войти другим способом')]").First;
+                .Locator("//div[contains(@data-widget, 'loginOrRegistration')]/descendant::button/div[contains(text(), 'Войти другим способом')]/..").First;
+
 
             await locator.ClickAsync();
         }
@@ -211,7 +218,7 @@ public class OzonScrapper(
         {
             var locator = page.Locator("//div[contains(@data-widget, 'profileMenuAnonymous')]").First;
 
-            return await locator.IsVisibleAsync() && !await locator.IsDisabledAsync();
+            return await locator.IsVisibleAsync() && await locator.IsEnabledAsync();
         }
         
         public async Task OpenLoginForm()

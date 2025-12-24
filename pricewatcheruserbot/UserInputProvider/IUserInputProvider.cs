@@ -2,6 +2,8 @@
 
 public interface IUserInputProvider
 {
+    Task Init();
+    
     Task<int> Telegram_GetApiId();
     Task<string> Telegram_GetApiHash();
     Task<string> Telegram_GetPassword();

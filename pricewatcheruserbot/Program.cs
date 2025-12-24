@@ -85,25 +85,22 @@ builder.Services.AddSingleton<ChannelWriter<WorkerItem>>(resolver =>
 builder.Services.AddHostedService<ProducerWorker>();
 builder.Services.AddHostedService<ConsumerWorker>();
 
-if (builder.Environment.IsDevelopment())
-{
-    DotNetEnv.Env.Load();
-    DotNetEnv.Env.TraversePath();
-    
-    builder.Services.AddSingleton<IUserInputProvider, EnvUserInputProvider>();
-}
-else
-{
-    builder.Services.AddSingleton<IUserInputProvider, FileUserInputProvider>();
-}
+#if DEBUG
+builder.Services.AddSingleton<IUserInputProvider, EnvUserInputProvider>();
+#else
+builder.Services.AddSingleton<IUserInputProvider, FileUserInputProvider>();
+#endif
 
 using (var host = builder.Build())
 {
+    var userInputProvider = host.Services.GetRequiredService<IUserInputProvider>();
+    
+    await userInputProvider.Init();
+    
     var client = host.Services.GetRequiredService<WTelegram.Client>();
     var updateRouter = host.Services.GetRequiredService<UpdateHandler>();
     var logger = host.Services.GetRequiredService<ILogger<Program>>();
     var scrappers = host.Services.GetServices<IScrapper>();
-    var userInputProvider = host.Services.GetRequiredService<IUserInputProvider>();
     
     _ = client.WithUpdateManager(updateRouter.Handle);
     await DoLogin(await userInputProvider.Telegram_GetPhoneNumber());
