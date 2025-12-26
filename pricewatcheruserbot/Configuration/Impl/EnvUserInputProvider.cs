@@ -1,5 +1,4 @@
-﻿#if DEBUG
-namespace pricewatcheruserbot.Configuration.Impl;
+﻿namespace pricewatcheruserbot.Configuration.Impl;
 
 public class EnvUserInputProvider : IUserInputProvider
 {
@@ -41,4 +40,3 @@ public class EnvUserInputProvider : IUserInputProvider
         return Task.FromResult(result);
     }
 }
-#endif

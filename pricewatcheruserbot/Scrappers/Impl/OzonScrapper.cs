@@ -132,6 +132,8 @@ public class OzonScrapper(
             var priceString = await pageObject.GetPrice();
             var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
 
+            await browserService.SaveState();
+            
             logger.LogInformation("Price was received successfully"); 
             await page.Debug_TakeScreenshot("ozon_price_received");
             
