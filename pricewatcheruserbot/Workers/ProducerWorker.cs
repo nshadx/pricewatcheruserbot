@@ -8,8 +8,6 @@ public class ProducerWorker(
     IServiceProvider serviceProvider
 ) : BackgroundService
 {
-    private static readonly TimeSpan _delay = TimeSpan.FromMinutes(4);
-    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -26,8 +24,8 @@ public class ProducerWorker(
                     await channel.WriteAsync(workerItem, stoppingToken);
                 }
             }
-            
-            await Task.Delay(_delay, stoppingToken);
+
+            await DelayUtils.ProducerDelay(stoppingToken);
         }
     }
 }

@@ -1,12 +1,15 @@
 ﻿namespace pricewatcheruserbot.Workers;
 
-public static class RandomDelayGenerator
+public static class DelayUtils
 {
     private static readonly Random _random = Random.Shared;
-
-    public static Task NextDelay(
+    private static readonly TimeSpan _producerDelay = TimeSpan.FromSeconds(30);
+    
+    public static Task RandomNext(
         int minMinutes = 10,
-        int maxMinutes = 15)
+        int maxMinutes = 15,
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(minMinutes);
         ArgumentOutOfRangeException.ThrowIfLessThan(maxMinutes, minMinutes);
@@ -16,6 +19,8 @@ public static class RandomDelayGenerator
 
         var delay = new TimeSpan(0, minutes, seconds);
 
-        return Task.Delay(delay);
+        return Task.Delay(delay, cancellationToken);
     }
+
+    public static Task ProducerDelay(CancellationToken cancellationToken) => Task.Delay(_producerDelay, cancellationToken);
 }

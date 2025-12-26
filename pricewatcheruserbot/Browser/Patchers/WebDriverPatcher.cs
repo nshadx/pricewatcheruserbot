@@ -13,17 +13,6 @@ public class WebDriverPatcher : IPatcher
         AddOrReplaceArgument(args, "--start-maximized", null, false);
         AddOrReplaceArgument(args, "--disable-dev-shm-usage", null, false);
         
-        var idx = args.FindIndex(x => x.StartsWith("--disable-blink-features="));
-        if (idx != -1)
-        {
-            var arg = args[idx];
-            args[idx] = $"{arg}, AutomationControlled";
-        }
-        else
-        {
-            args.Add("--disable-blink-features=AutomationControlled");
-        }
-        
         options.Args = args.ToArray();
         
         return Task.CompletedTask;

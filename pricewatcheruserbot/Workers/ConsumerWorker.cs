@@ -66,40 +66,51 @@ public class ConsumerWorker(
     {
         await foreach (var workerItem in channel.ReadAllAsync(stoppingToken))
         {
-            logger.LogInformation("Start handling {workerItem}...", workerItem);
-
-            IScrapper scrapper = workerItem.Url.Host switch
+            try
             {
-                "www.ozon.ru" or "ozon.ru" => scrappers.OfType<OzonScrapper>().Single(),
-                "www.wildberries.ru" or "wildberries.ru" => scrappers.OfType<WildberriesScrapper>().Single(),
-                "www.market.yandex.ru" or "market.yandex.ru" => scrappers.OfType<YandexMarketScrapper>().Single(),
-                var host => throw new InvalidOperationException($"Cannot resolve scrapper for host '{host}'")
-            };
-            var price = await scrapper.GetPrice(workerItem.Url);
+                logger.LogInformation("Start handling {workerItem}...", workerItem);
 
-            logger.LogInformation("Price received for {workerItem}", workerItem);
-            
-            if (memoryCache.TryGetValue<double>(workerItem.Id, out var previousPrice))
-            {
-                var difference = previousPrice - price;
-                
-                if (difference > 0)
+                IScrapper scrapper = workerItem.Url.Host switch
                 {
-                    var text = $"{MessageUtils.GenerateRandomEmojis(3)}: The item's ({workerItem}) price has dropped by {difference}";
-                            
-                    await client.SendMessageAsync(
-                        peer: new InputPeerSelf(),
-                        text: text
-                    );
+                    "www.ozon.ru" or "ozon.ru" => scrappers.OfType<OzonScrapper>().Single(),
+                    "www.wildberries.ru" or "wildberries.ru" => scrappers.OfType<WildberriesScrapper>().Single(),
+                    "www.market.yandex.ru" or "market.yandex.ru" => scrappers.OfType<YandexMarketScrapper>().Single(),
+                    var host => throw new InvalidOperationException($"Cannot resolve scrapper for host '{host}'")
+                };
 
-                    logger.LogInformation("Price dropped by {difference} for {workerItem}", difference, workerItem);
+                var price = await scrapper.GetPrice(workerItem.Url);
+
+                logger.LogInformation("Price received for {workerItem}", workerItem);
+
+                if (memoryCache.TryGetValue<double>(workerItem.Id, out var previousPrice))
+                {
+                    var difference = previousPrice - price;
+
+                    if (difference > 0)
+                    {
+                        var text = $"{MessageUtils.GenerateRandomEmojis(3)}: The item's ({workerItem}) price has dropped by {difference}";
+
+                        await client.SendMessageAsync(
+                            peer: new InputPeerSelf(),
+                            text: text
+                        );
+
+                        logger.LogInformation("Price dropped by {difference} for {workerItem}", difference, workerItem);
+                    }
                 }
+
+                logger.LogInformation("Price updated for {workerItem}", workerItem);
+                memoryCache.Set(workerItem.Id, price);
             }
-
-            logger.LogInformation("Price updated for {workerItem}", workerItem);
-            memoryCache.Set(workerItem.Id, price);
-
-            await RandomDelayGenerator.NextDelay();
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Item handling completed with error");
+                continue;
+            }
+            finally
+            {
+                await DelayUtils.RandomNext(cancellationToken: stoppingToken);
+            }
         }
     }
 }
