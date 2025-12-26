@@ -17,9 +17,4 @@
         <PackageReference Include="WTelegramClient" Version="4.3.15" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Content Include="..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
-    </ItemGroup>
 </Project>

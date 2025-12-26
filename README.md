@@ -6,16 +6,7 @@
 # Как установить
 
 1. Зайти [вот сюда](https://my.telegram.org/auth) -> API Development tools -> Create New Application (Type=Desktop) -> получить `api_id` и `api_hash`.
-2. Скачать [вот этот скрипт и запустить его](https://github.com/nshadx/pricewatcheruserbot/blob/master/script.ps1) через Windows PowerShell (Run As Administrator).
-Если нет Docker Desktop, git скрипт даст соответствующие ссылки на скачивание.
-
-# Авторизация в ЛК
-
-Сразу после завершения скрипта будет запущено приложение и попросит ввести данные для авторизации, а также если включено 2FA `Verification code: `. При последующих запусках такая процедура не понадобится.
-
-Бот будет просить телефон, код доступа с почты, телефоны... whatever от ЛК маркетплейсов. Их нужно вводить при первом запуске приложения в тоже самое окно терминала после установки.
-
-Закрывать интерактивное окно можно после сообщения `Success authorization in services` после ввода комбинации `Ctrl+P, Ctrl+Q`.
+2. In progress
 
 # Команды
 

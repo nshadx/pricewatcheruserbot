@@ -5,12 +5,7 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "environmentVariables": {
-        "DOTNET_ENVIRONMENT": "Development",
-        
-        "TelegramSessionFilePath": "telegram-session",
-        "BrowserSessionFilePath": "browser-session",
-        "DbConnectionString": "Data Source=app.db",
-        "StorageDirectoryPath": null
+        "DOTNET_ENVIRONMENT": "Development"
       }
     }
   }
