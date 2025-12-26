@@ -1,7 +1,8 @@
 using System.Threading.Channels;
 using pricewatcheruserbot.Entities;
+using pricewatcheruserbot.Services;
 
-namespace pricewatcheruserbot;
+namespace pricewatcheruserbot.Workers;
 
 public class ProducerWorker(
     IServiceProvider serviceProvider

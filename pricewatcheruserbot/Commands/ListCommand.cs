@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using pricewatcheruserbot.Entities;
+using pricewatcheruserbot.Services;
 using TL;
 
 namespace pricewatcheruserbot.Commands;

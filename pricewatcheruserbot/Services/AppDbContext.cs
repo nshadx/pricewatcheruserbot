@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using pricewatcheruserbot.Entities;
 
-namespace pricewatcheruserbot;
+namespace pricewatcheruserbot.Services;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {

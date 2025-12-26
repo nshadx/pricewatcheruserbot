@@ -1,4 +1,6 @@
 ﻿using Microsoft.Playwright;
+using pricewatcheruserbot.Browser;
+using pricewatcheruserbot.Configuration;
 
 namespace pricewatcheruserbot.Scrappers.Impl;
 

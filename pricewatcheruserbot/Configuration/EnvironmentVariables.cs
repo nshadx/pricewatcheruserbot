@@ -1,4 +1,4 @@
-﻿namespace pricewatcheruserbot;
+﻿namespace pricewatcheruserbot.Configuration;
 
 public static class EnvironmentVariables
 {

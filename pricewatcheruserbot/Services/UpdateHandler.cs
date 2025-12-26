@@ -1,7 +1,7 @@
 ﻿using pricewatcheruserbot.Commands;
 using TL;
 
-namespace pricewatcheruserbot;
+namespace pricewatcheruserbot.Services;
 
 public class UpdateHandler(
     IServiceProvider serviceProvider,

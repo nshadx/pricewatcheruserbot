@@ -1,12 +1,15 @@
 using System.Threading.Channels;
 using Microsoft.EntityFrameworkCore;
 using pricewatcheruserbot;
+using pricewatcheruserbot.Browser;
 using pricewatcheruserbot.Commands;
+using pricewatcheruserbot.Configuration;
+using pricewatcheruserbot.Configuration.Impl;
 using pricewatcheruserbot.Entities;
 using pricewatcheruserbot.Scrappers;
 using pricewatcheruserbot.Scrappers.Impl;
-using pricewatcheruserbot.UserInputProvider;
-using pricewatcheruserbot.UserInputProvider.Impl;
+using pricewatcheruserbot.Services;
+using pricewatcheruserbot.Workers;
 using TL;
 using Channel = System.Threading.Channels.Channel;
 

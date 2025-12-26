@@ -1,5 +1,5 @@
 ﻿#if DEBUG
-namespace pricewatcheruserbot.UserInputProvider.Impl;
+namespace pricewatcheruserbot.Configuration.Impl;
 
 public class EnvUserInputProvider : IUserInputProvider
 {

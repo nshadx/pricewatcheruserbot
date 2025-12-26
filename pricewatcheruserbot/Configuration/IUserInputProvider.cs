@@ -1,4 +1,4 @@
-﻿namespace pricewatcheruserbot.UserInputProvider;
+﻿namespace pricewatcheruserbot.Configuration;
 
 public interface IUserInputProvider
 {

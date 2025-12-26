@@ -4,7 +4,7 @@ using pricewatcheruserbot.Entities;
 using pricewatcheruserbot.Scrappers;
 using TL;
 
-namespace pricewatcheruserbot;
+namespace pricewatcheruserbot.Workers;
 
 public class ConsumerWorker(
     IServiceProvider serviceProvider,

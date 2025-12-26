@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace pricewatcheruserbot.UserInputProvider.Impl;
+namespace pricewatcheruserbot.Configuration.Impl;
 
 public class FileUserInputProvider : IUserInputProvider
 {

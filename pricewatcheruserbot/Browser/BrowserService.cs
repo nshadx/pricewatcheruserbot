@@ -1,7 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Microsoft.Playwright;
+using pricewatcheruserbot.Configuration;
 
-namespace pricewatcheruserbot;
+namespace pricewatcheruserbot.Browser;
 
 public class BrowserService : IAsyncDisposable
 {
