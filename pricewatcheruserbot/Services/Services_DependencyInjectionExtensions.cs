@@ -16,6 +16,14 @@ public static class Services_DependencyInjectionExtensions
         return services;
     }
 
+    public static IServiceCollection AddMessageServices(this IServiceCollection services)
+    {
+        services.AddSingleton<MessageSender>();
+        services.AddScoped<MessageManager>();
+
+        return services;
+    }
+    
     public static IServiceCollection AddTelegramClient(this IServiceCollection services)
     {
         services.AddSingleton(provider =>

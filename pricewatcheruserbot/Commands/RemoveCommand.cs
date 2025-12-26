@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using pricewatcheruserbot.Entities;
 using pricewatcheruserbot.Services;
 using TL;
 
@@ -31,7 +30,7 @@ public class RemoveCommand
     public class Handler(
         AppDbContext dbContext,
         IMemoryCache memoryCache,
-        WTelegram.Client client
+        MessageManager messageManager
     )
     {
         public async Task Handle(RemoveCommand command)
@@ -53,28 +52,8 @@ public class RemoveCommand
 
             memoryCache.Remove(workerItem.Id);
 
-            var listMessages = dbContext.SentMessages
-                .Where(x => x.Type == MessageType.LIST)
-                .AsAsyncEnumerable();
-            var workerItems = await dbContext.WorkerItems
-                .OrderBy(x => x.Order)
-                .ToListAsync();
-            var lines = workerItems.Select(x => x.ToString());
-            var text = workerItems.Count == 0 ? "<empty>" : string.Join('\n', lines);
-            
-            await foreach (var message in listMessages)
-            {
-                await client.Messages_EditMessage(
-                    peer: new InputPeerSelf(),
-                    id: message.TelegramId,
-                    message: text
-                );
-            }
-            
-            await client.DeleteMessages(
-                peer: new InputPeerSelf(),
-                command.MessageId
-            );
+            await messageManager.UpdateAllLists();
+            await messageManager.DeleteCommandMessage(command.MessageId);
         }
     }
 }

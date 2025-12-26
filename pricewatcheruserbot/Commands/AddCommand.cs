@@ -29,47 +29,22 @@ public class AddCommand
 
     public class Handler(
         AppDbContext dbContext,
-        WTelegram.Client client
+        MessageManager messageManager
     )
     {
         public async Task Handle(AddCommand command)
         {
-            var lastWorkerItemOrder = await dbContext.WorkerItems
-                .OrderByDescending(x => x.Order)
-                .Select(x => x.Order)
-                .FirstOrDefaultAsync();
-            var newOrder = lastWorkerItemOrder + 1;
-            WorkerItem workerItem = new()
+            var newOrder = await dbContext.WorkerItems.MaxAsync(x => (int?)x.Order) + 1 ?? 1;
+
+            await dbContext.WorkerItems.AddAsync(new WorkerItem
             {
                 Url = command.Url,
                 Order = newOrder
-            };
-            
-            await dbContext.WorkerItems.AddAsync(workerItem);
+            });
             await dbContext.SaveChangesAsync();
             
-            var listMessages = dbContext.SentMessages
-                .Where(x => x.Type == MessageType.LIST)
-                .AsAsyncEnumerable();
-            var workerItems = await dbContext.WorkerItems
-                .OrderBy(x => x.Order)
-                .ToListAsync();
-            var lines = workerItems.Select(x => x.ToString());
-            var text = workerItems.Count == 0 ? "<empty>" : string.Join('\n', lines);
-            
-            await foreach (var message in listMessages)
-            {
-                await client.Messages_EditMessage(
-                    peer: new InputPeerSelf(),
-                    id: message.TelegramId,
-                    message: text
-                );
-            }
-
-            await client.DeleteMessages(
-                peer: new InputPeerSelf(),
-                command.MessageId
-            );
+            await messageManager.UpdateAllLists();
+            await messageManager.DeleteCommandMessage(command.MessageId);
         }
     }
 }
