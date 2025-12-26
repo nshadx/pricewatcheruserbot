@@ -29,14 +29,14 @@ public class EnvUserInputProvider : IUserInputProvider
 
     public Task<string> Ozon_GetEmailVerificationCode()
     {
-        Console.Write("Enter ozon email verification code: "); var result = Console.ReadLine()!; Console.WriteLine();
+        Console.Write("Enter ozon email verification code: "); var result = Console.ReadLine() ?? string.Empty; Console.WriteLine();
 
         return Task.FromResult(result);
     }
 
     public Task<string> Ozon_GetPhoneVerificationCode()
     {
-        Console.Write("Enter ozon phone verification code: "); var result = Console.ReadLine()!; Console.WriteLine();
+        Console.Write("Enter ozon phone verification code: "); var result = Console.ReadLine() ?? string.Empty; Console.WriteLine();
 
         return Task.FromResult(result);
     }

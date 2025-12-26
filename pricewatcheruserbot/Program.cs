@@ -1,6 +1,5 @@
 using System.Threading.Channels;
 using Microsoft.EntityFrameworkCore;
-using pricewatcheruserbot;
 using pricewatcheruserbot.Browser;
 using pricewatcheruserbot.Commands;
 using pricewatcheruserbot.Configuration;
@@ -36,19 +35,6 @@ builder.Services.AddSingleton(provider =>
     
     return client;
 });
-builder.Services.AddKeyedSingleton("ozon", (provider, _) => (Func<string, Task<string>>)(async what =>
-    {
-        var userInputProvider = provider.GetRequiredService<IUserInputProvider>();
-
-        return what switch
-        {
-            "phone_number" => await userInputProvider.Ozon_GetPhoneNumber(),
-            "phone_verification_code" => await userInputProvider.Ozon_GetPhoneVerificationCode(),
-            "email_verification_code" => await userInputProvider.Ozon_GetEmailVerificationCode(),
-            _ => throw new InvalidOperationException()
-        };
-    })
-);
 
 builder.Services.AddDbContext<AppDbContext>(x =>
 {
@@ -65,15 +51,14 @@ builder.Services.AddSingleton<IScrapper, WildberriesScrapper>();
 builder.Services.AddSingleton<IScrapper, YandexMarketScrapper>();
 
 builder.Services.AddSingleton<BrowserService>();
-builder.Services.AddSingleton<ScrapperFactory>();
 
 var channel = Channel.CreateBounded<WorkerItem>(
     new BoundedChannelOptions(32)
     {
-        SingleReader = false,
-        SingleWriter = false,
+        SingleReader = true,
+        SingleWriter = true,
         AllowSynchronousContinuations = false,
-        FullMode = BoundedChannelFullMode.DropWrite
+        FullMode = BoundedChannelFullMode.Wait
     });
 builder.Services.AddSingleton<ChannelReader<WorkerItem>>(channel);
 builder.Services.AddSingleton<ChannelWriter<WorkerItem>>(resolver =>

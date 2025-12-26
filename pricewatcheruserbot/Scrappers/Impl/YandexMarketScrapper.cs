@@ -15,12 +15,10 @@ public class YandexMarketScrapper(
 
     public async Task<double> GetPrice(Uri url)
     {
-        var browser = await browserService.GetBrowserContext();
-        var page = await browser.NewPageAsync();
+        var page = await browserService.CreateNewPageWithinContext();
         
         logger.LogInformation("Page init...");
         
-        await page.AddInitScriptAsync("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
         await page.GotoAsync(url.ToString());
         
         logger.LogInformation("Page loaded");
@@ -32,7 +30,7 @@ public class YandexMarketScrapper(
 
             PageObject pageObject = new(page);
 
-            logger.LogInformation("Try to close login box...");
+            logger.LogInformation("Trying to close login box...");
             
             await pageObject.CloseLoginBox();
             
@@ -62,7 +60,7 @@ public class YandexMarketScrapper(
             var locator = page
                 .Locator("//div[contains(@data-baobab-name, 'loginPopup')]").First;
 
-            try
+            if (await locator.IsVisibleAsync())
             {
                 var boundingBox = await locator.BoundingBoxAsync();
 
@@ -75,7 +73,6 @@ public class YandexMarketScrapper(
                     await page.Mouse.ClickAsync(leftX, leftY);
                 }
             }
-            catch { }
         }
         public async Task<string?> GetPrice()
         {

@@ -2,57 +2,82 @@
 using Microsoft.Extensions.Caching.Memory;
 using pricewatcheruserbot.Entities;
 using pricewatcheruserbot.Scrappers;
+using pricewatcheruserbot.Scrappers.Impl;
 using TL;
+using Channel = System.Threading.Channels.Channel;
 
 namespace pricewatcheruserbot.Workers;
 
 public class ConsumerWorker(
-    IServiceProvider serviceProvider,
-    ChannelReader<WorkerItem> channel,
     ILogger<ConsumerWorker> logger,
-    ScrapperFactory scrapperFactory,
+    IEnumerable<IScrapper> scrappers,
     IMemoryCache memoryCache,
-    WTelegram.Client client
+    WTelegram.Client client,
+    ChannelReader<WorkerItem> globalChannel
 ) : BackgroundService
 {
-    private static readonly TimeSpan _delay = TimeSpan.FromMinutes(5);
-    private const int _workers = 4;
-   
+    private readonly Channel<WorkerItem> _ozonChannel = Channel.CreateBounded<WorkerItem>(1);
+    private readonly Channel<WorkerItem> _yandexChannel = Channel.CreateBounded<WorkerItem>(1);
+    private readonly Channel<WorkerItem> _wildberriesChannel = Channel.CreateBounded<WorkerItem>(1);
+    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            var enumerable = channel.ReadAllAsync(stoppingToken);
-            
-            await Parallel.ForEachAsync(
-                source: enumerable.Take(_workers),
-                parallelOptions: new ParallelOptions() { MaxDegreeOfParallelism = _workers },
-                body: async (workerItem, _) =>
+        var enumerable = globalChannel.ReadAllAsync(stoppingToken);
+        
+        var workerTask = Task.WhenAll(
+            HandleWorkerItem(_ozonChannel, stoppingToken),
+            HandleWorkerItem(_yandexChannel, stoppingToken),
+            HandleWorkerItem(_wildberriesChannel, stoppingToken)
+        );
+        var parallelTask = Parallel.ForEachAsync(
+            source: enumerable,
+            body: async (workerItem, stoppingToken) =>
+            {
+                switch (workerItem.Url.Host)
                 {
-                    try
-                    {
-                        logger.LogInformation("start: {workerItem}", workerItem);
-                        await HandleWorkerItem(workerItem);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex, "an error occured during handling of url");
-                    }
+                    case "www.ozon.ru" or "ozon.ru":
+                        await _ozonChannel.Writer.WriteAsync(workerItem, stoppingToken);
+                    break;
+                    case "www.market.yandex.ru" or "market.yandex.ru":
+                        await _yandexChannel.Writer.WriteAsync(workerItem, stoppingToken);
+                    break;
+                    case "www.wildberries.ru" or "wildberries.ru":
+                        await _wildberriesChannel.Writer.WriteAsync(workerItem, stoppingToken);
+                    break;
                 }
-            );
+            },
+            cancellationToken: stoppingToken
+        );
+        var task = Task.WhenAll(workerTask, parallelTask);
 
-            await Task.Delay(_delay, stoppingToken);
-        }
+        await task;
     }
 
-    private async Task HandleWorkerItem(WorkerItem workerItem)
+    public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        await using (var scope = serviceProvider.CreateAsyncScope())
+        _ozonChannel.Writer.Complete();
+        _yandexChannel.Writer.Complete();
+        _wildberriesChannel.Writer.Complete();
+        
+        await base.StopAsync(cancellationToken);
+    }
+
+    private async Task HandleWorkerItem(ChannelReader<WorkerItem> channel, CancellationToken stoppingToken)
+    {
+        await foreach (var workerItem in channel.ReadAllAsync(stoppingToken))
         {
-            var scrapper = scrapperFactory.GetScrapper(workerItem.Url);
+            logger.LogInformation("Start handling {workerItem}...", workerItem);
+
+            IScrapper scrapper = workerItem.Url.Host switch
+            {
+                "www.ozon.ru" or "ozon.ru" => scrappers.OfType<OzonScrapper>().Single(),
+                "www.wildberries.ru" or "wildberries.ru" => scrappers.OfType<WildberriesScrapper>().Single(),
+                "www.market.yandex.ru" or "market.yandex.ru" => scrappers.OfType<YandexMarketScrapper>().Single(),
+                var host => throw new InvalidOperationException($"Cannot resolve scrapper for host '{host}'")
+            };
             var price = await scrapper.GetPrice(workerItem.Url);
 
-            logger.LogInformation("price received for {workerItem}", workerItem);
+            logger.LogInformation("Price received for {workerItem}", workerItem);
             
             if (memoryCache.TryGetValue<double>(workerItem.Id, out var previousPrice))
             {
@@ -60,38 +85,21 @@ public class ConsumerWorker(
                 
                 if (difference > 0)
                 {
-                    var text = $"{GenerateRandomEmojis(3)}: The item's ({workerItem}) price has dropped by {difference}";
+                    var text = $"{MessageUtils.GenerateRandomEmojis(3)}: The item's ({workerItem}) price has dropped by {difference}";
                             
                     await client.SendMessageAsync(
                         peer: new InputPeerSelf(),
                         text: text
                     );
 
-                    logger.LogInformation("price dropped by {difference} for {workerItem}", difference, workerItem);
+                    logger.LogInformation("Price dropped by {difference} for {workerItem}", difference, workerItem);
                 }
             }
 
-            logger.LogInformation("price updated for {workerItem}", workerItem);
+            logger.LogInformation("Price updated for {workerItem}", workerItem);
             memoryCache.Set(workerItem.Id, price);
+
+            await RandomDelayGenerator.NextDelay();
         }
-    }
-    
-    private static string GenerateRandomEmojis(int count)
-    {
-        string[] emojis =
-        [
-            "🔥", "🎉", "💥", "✨", "🌟", "🚀", "❤️", "😎", "🤩", "🌈",
-            "💫", "🎊", "💎", "🎵", "🕺", "🍕", "🍿", "⚡", "🥳", "👑"
-        ];
-
-        string result = "";
-
-        for (var i = 0; i < count; i++)
-        {
-            int index = Random.Shared.Next(emojis.Length);
-            result += emojis[index];
-        }
-
-        return result;
     }
 }

@@ -21,7 +21,19 @@ public class FileUserInputProvider : IUserInputProvider
     
     public async Task Init()
     {
-        await File.WriteAllTextAsync(JsonFilePath, Json);
+        if (!File.Exists(JsonFilePath))
+        {
+            await File.WriteAllTextAsync(JsonFilePath, Json);
+        }
+        else
+        {
+            var text = await File.ReadAllTextAsync(JsonFilePath);
+            var dictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(text);
+
+            dictionary?["TelegramVerificationCode"] = string.Empty;
+            dictionary?["OzonPhoneVerificationCode"] = string.Empty;
+            dictionary?["OzonEmailVerificationCode"] = string.Empty;
+        }
     }
 
     public async Task<int> Telegram_GetApiId()

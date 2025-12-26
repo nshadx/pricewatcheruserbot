@@ -1,38 +1,68 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Microsoft.Playwright;
+using pricewatcheruserbot.Browser.Patchers;
 using pricewatcheruserbot.Configuration;
 
 namespace pricewatcheruserbot.Browser;
 
-public class BrowserService : IAsyncDisposable
+public class BrowserService : IAsyncDisposable, IDisposable
 {
+    private IPlaywright? _instance;
+    private IBrowser? _browser;
     private IBrowserContext? _browserContext;
 
-    public async Task<IBrowserContext> GetBrowserContext()
+    private readonly IReadOnlyCollection<IPatcher> _patchers;
+    
+    public BrowserService(IEnumerable<IPatcher> patchers)
+    {
+        _patchers = patchers.ToArray();
+    }
+
+    public async Task SaveState()
+    {
+        await Initialize();
+        
+        await _browserContext.StorageStateAsync(new BrowserContextStorageStateOptions() { Path = EnvironmentVariables.StorageDirectoryPath });
+    }
+    
+    public async Task<IPage> CreateNewPageWithinContext()
     {
         await Initialize();
 
-        return _browserContext;
+        var page = await _browserContext.NewPageAsync();
+
+        foreach (var patcher in _patchers)
+        {
+            await patcher.OnPageCreated(page);
+        }
+
+        return page;
     }
     
+    [MemberNotNull(nameof(_instance))]
+    [MemberNotNull(nameof(_browser))]
     [MemberNotNull(nameof(_browserContext))]
     private async Task Initialize()
     {
+        _instance ??= await Playwright.CreateAsync();
+
+        if (_browser is null)
+        {
+            BrowserTypeLaunchOptions options = new();
+            options.Headless = true;
+            options.Channel = "chrome";
+            
+            foreach (var patcher in _patchers)
+            {
+                await patcher.BeforeLaunch(options);
+            }
+
+            _browser = await _instance.Chromium.LaunchAsync(options);
+        }
+
         if (_browserContext is null)
         {
-            var instance = await Playwright.CreateAsync();
-            var browser = await instance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions()
-            {
-                Headless = true,
-                Channel = "chrome",
-                Args =
-                [
-                    "--no-sandbox",
-                    "--disable-blink-features=AutomationControlled",
-                    "--start-maximized",
-                    "--disable-dev-shm-usage"
-                ]
-            });
+            BrowserNewContextOptions options = new();
             
             string? storageStatePath = null;
             if (File.Exists(EnvironmentVariables.BrowserSessionFilePath))
@@ -40,18 +70,48 @@ public class BrowserService : IAsyncDisposable
                 storageStatePath = EnvironmentVariables.BrowserSessionFilePath;
             }
             
-            _browserContext = await browser.NewContextAsync(new BrowserNewContextOptions()
+            options.StorageStatePath = storageStatePath;
+
+            foreach (var patcher in _patchers)
             {
-                StorageStatePath = storageStatePath,
-                ViewportSize = new ViewportSize() { Height = 1080, Width = 1920 },
-                UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                Locale = "ru-RU"
-            });
+                await patcher.OnNewContextCreated(options);
+            }
+            
+            _browserContext = await _browser.NewContextAsync(options);
+        }
+    }
+    
+    public void Dispose()
+    {
+        _instance?.Dispose();
+        
+        if (_browser is IDisposable browserDisposable)
+        {
+            browserDisposable.Dispose();
+        }
+
+        if (_browserContext is IDisposable browserContextDisposable)
+        {
+            browserContextDisposable.Dispose();
         }
     }
 
     public async ValueTask DisposeAsync()
     {
+        if (_instance is IAsyncDisposable instanceAsyncDisposable)
+        {
+            await instanceAsyncDisposable.DisposeAsync();
+        }
+        else
+        {
+            _instance?.Dispose();
+        }
+
+        if (_browser != null)
+        {
+            await _browser.DisposeAsync();
+        }
+
         if (_browserContext != null)
         {
             await _browserContext.DisposeAsync();

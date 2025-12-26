@@ -15,12 +15,10 @@ public class WildberriesScrapper(
 
     public async Task<double> GetPrice(Uri url)
     {
-        var browser = await browserService.GetBrowserContext();
-        var page = await browser.NewPageAsync();
+        var page = await browserService.CreateNewPageWithinContext();
         
         logger.LogInformation("Page init...");
         
-        await page.AddInitScriptAsync("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
         await page.GotoAsync(url.ToString());
         
         logger.LogInformation("Page loaded");
