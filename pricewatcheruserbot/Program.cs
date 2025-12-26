@@ -7,7 +7,6 @@ using pricewatcheruserbot.Workers;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddMemoryCache();
 builder.Services.AddAppDbContext();
 builder.Services.AddTelegramClient();
 builder.Services.AddBrowserServices();
@@ -15,6 +14,8 @@ builder.Services.AddScrappers();
 builder.Services.AddCommandHandlers();
 builder.Services.AddWorkers();
 builder.Services.AddUserInputProviders();
+builder.Services.AddTrackerServices();
+builder.Services.AddMessageServices();
 
 using (var host = builder.Build())
 {

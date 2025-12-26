@@ -1,25 +1,22 @@
 ﻿using System.Threading.Channels;
-using Microsoft.Extensions.Caching.Memory;
 using pricewatcheruserbot.Entities;
 using pricewatcheruserbot.Scrappers;
 using pricewatcheruserbot.Scrappers.Impl;
 using pricewatcheruserbot.Services;
-using TL;
-using Channel = System.Threading.Channels.Channel;
 
 namespace pricewatcheruserbot.Workers;
 
 public class ConsumerWorker(
     ILogger<ConsumerWorker> logger,
-    IEnumerable<IScrapper> scrappers,
-    IMemoryCache memoryCache,
     ChannelReader<WorkerItem> globalChannel,
+    ScrapperProvider scrapperProvider,
+    WorkerItemTracker workerItemTracker,
     MessageSender messageSender
 ) : BackgroundService
 {
-    private readonly Channel<WorkerItem> _ozonChannel = Channel.CreateBounded<WorkerItem>(1);
-    private readonly Channel<WorkerItem> _yandexChannel = Channel.CreateBounded<WorkerItem>(1);
-    private readonly Channel<WorkerItem> _wildberriesChannel = Channel.CreateBounded<WorkerItem>(1);
+    private readonly Channel<(IScrapper Scrapper, WorkerItem WorkerItem)> _ozonChannel = Channel.CreateBounded<(IScrapper Scrapper, WorkerItem WorkerItem)>(1);
+    private readonly Channel<(IScrapper Scrapper, WorkerItem WorkerItem)> _yandexChannel = Channel.CreateBounded<(IScrapper Scrapper, WorkerItem WorkerItem)>(1);
+    private readonly Channel<(IScrapper Scrapper, WorkerItem WorkerItem)> _wildberriesChannel = Channel.CreateBounded<(IScrapper Scrapper, WorkerItem WorkerItem)>(1);
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -30,22 +27,22 @@ public class ConsumerWorker(
             HandleWorkerItem(_yandexChannel, stoppingToken),
             HandleWorkerItem(_wildberriesChannel, stoppingToken)
         );
+
+        Dictionary<Type, Channel<(IScrapper Scrapper, WorkerItem WorkerItem)>> router = new()
+        {
+            [typeof(OzonScrapper)] = _ozonChannel,
+            [typeof(WildberriesScrapper)] = _wildberriesChannel,
+            [typeof(YandexMarketScrapper)] = _yandexChannel
+        };
+        
         var parallelTask = Parallel.ForEachAsync(
             source: enumerable,
             body: async (workerItem, stoppingToken) =>
             {
-                switch (workerItem.Url.Host)
-                {
-                    case "www.ozon.ru" or "ozon.ru":
-                        await _ozonChannel.Writer.WriteAsync(workerItem, stoppingToken);
-                    break;
-                    case "www.market.yandex.ru" or "market.yandex.ru":
-                        await _yandexChannel.Writer.WriteAsync(workerItem, stoppingToken);
-                    break;
-                    case "www.wildberries.ru" or "wildberries.ru":
-                        await _wildberriesChannel.Writer.WriteAsync(workerItem, stoppingToken);
-                    break;
-                }
+                var scrapper = scrapperProvider.GetByUrl(workerItem.Url);
+                var channel = router[scrapper.GetType()];
+
+                await channel.Writer.WriteAsync((scrapper, workerItem), stoppingToken);
             },
             cancellationToken: stoppingToken
         );
@@ -63,37 +60,23 @@ public class ConsumerWorker(
         await base.StopAsync(cancellationToken);
     }
 
-    private async Task HandleWorkerItem(ChannelReader<WorkerItem> channel, CancellationToken stoppingToken)
+    private async Task HandleWorkerItem(ChannelReader<(IScrapper Scrapper, WorkerItem WorkerItem)> channel, CancellationToken stoppingToken)
     {
-        await foreach (var workerItem in channel.ReadAllAsync(stoppingToken))
+        await foreach (var (scrapper, workerItem) in channel.ReadAllAsync(stoppingToken))
         {
             try
             {
                 logger.LogInformation("Start handling {workerItem}...", workerItem);
-
-                IScrapper scrapper = workerItem.Url.Host switch
-                {
-                    "www.ozon.ru" or "ozon.ru" => scrappers.OfType<OzonScrapper>().Single(),
-                    "www.wildberries.ru" or "wildberries.ru" => scrappers.OfType<WildberriesScrapper>().Single(),
-                    "www.market.yandex.ru" or "market.yandex.ru" => scrappers.OfType<YandexMarketScrapper>().Single(),
-                    var host => throw new InvalidOperationException($"Cannot resolve scrapper for host '{host}'")
-                };
-
+                
                 var price = await scrapper.GetPrice(workerItem.Url);
 
                 logger.LogInformation("Price received for {workerItem}", workerItem);
 
-                if (memoryCache.TryGetValue<double>(workerItem.Id, out var previousPrice))
+                if (workerItemTracker.IsPriceDecreased(workerItem, price, out var difference))
                 {
-                    var difference = previousPrice - price;
-                    if (difference > 0)
-                    {
-                        await messageSender.Send_PriceDropped(workerItem, difference);
-                        logger.LogInformation("Price dropped by {difference} for {workerItem}", difference, workerItem);
-                    }
+                    await messageSender.Send_PriceDropped(workerItem, difference);
+                    logger.LogInformation("Price dropped by {difference} for {workerItem}", difference, workerItem);
                 }
-                
-                memoryCache.Set(workerItem.Id, price);
             }
             catch (Exception ex)
             {

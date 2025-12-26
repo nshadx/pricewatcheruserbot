@@ -29,7 +29,7 @@ public class RemoveCommand
     
     public class Handler(
         AppDbContext dbContext,
-        IMemoryCache memoryCache,
+        WorkerItemTracker workerItemTracker,
         MessageManager messageManager
     )
     {
@@ -50,7 +50,7 @@ public class RemoveCommand
             dbContext.WorkerItems.Remove(workerItem);
             await dbContext.SaveChangesAsync();
 
-            memoryCache.Remove(workerItem.Id);
+            workerItemTracker.Remove(workerItem);
 
             await messageManager.UpdateAllLists();
             await messageManager.DeleteCommandMessage(command.MessageId);

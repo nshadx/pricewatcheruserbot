@@ -16,6 +16,14 @@ public static class Services_DependencyInjectionExtensions
         return services;
     }
 
+    public static IServiceCollection AddTrackerServices(this IServiceCollection services)
+    {
+        services.AddMemoryCache();
+        services.AddSingleton<WorkerItemTracker>();
+
+        return services;
+    }
+    
     public static IServiceCollection AddMessageServices(this IServiceCollection services)
     {
         services.AddSingleton<MessageSender>();
