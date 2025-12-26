@@ -25,7 +25,7 @@ public class MessageManager(
         }
     }
 
-    public async Task SendNewList()
+    public async Task SetCurrentNewList()
     {
         var workerItems = await dbContext.WorkerItems
             .OrderBy(x => x.Order)

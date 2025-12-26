@@ -1,4 +1,4 @@
-﻿namespace pricewatcheruserbot.Workers;
+﻿namespace pricewatcheruserbot.Services;
 
 public static class MessageUtils
 {

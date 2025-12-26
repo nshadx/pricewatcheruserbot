@@ -1,4 +1,5 @@
 ﻿using pricewatcheruserbot.Entities;
+using pricewatcheruserbot.Workers;
 using TL;
 
 namespace pricewatcheruserbot.Services;
@@ -7,6 +8,16 @@ public class MessageSender(
     WTelegram.Client client
 )
 {
+    public async Task<Message> Send_PriceDropped(WorkerItem workerItem, double difference)
+    {
+        var message = await client.SendMessageAsync(
+            peer: new InputPeerSelf(),
+            text: $"{MessageUtils.GenerateRandomEmojis(3)}: The item's ({workerItem}) price has dropped by {difference}"
+        );
+
+        return message;
+    }
+    
     public async Task<Message> Send_WorkerItemList(IReadOnlyCollection<WorkerItem> workerItems)
     {
         var message = await client.SendMessageAsync(

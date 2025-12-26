@@ -3,6 +3,7 @@ using Microsoft.Extensions.Caching.Memory;
 using pricewatcheruserbot.Entities;
 using pricewatcheruserbot.Scrappers;
 using pricewatcheruserbot.Scrappers.Impl;
+using pricewatcheruserbot.Services;
 using TL;
 using Channel = System.Threading.Channels.Channel;
 
@@ -12,8 +13,8 @@ public class ConsumerWorker(
     ILogger<ConsumerWorker> logger,
     IEnumerable<IScrapper> scrappers,
     IMemoryCache memoryCache,
-    WTelegram.Client client,
-    ChannelReader<WorkerItem> globalChannel
+    ChannelReader<WorkerItem> globalChannel,
+    MessageSender messageSender
 ) : BackgroundService
 {
     private readonly Channel<WorkerItem> _ozonChannel = Channel.CreateBounded<WorkerItem>(1);
@@ -85,16 +86,9 @@ public class ConsumerWorker(
                 if (memoryCache.TryGetValue<double>(workerItem.Id, out var previousPrice))
                 {
                     var difference = previousPrice - price;
-
                     if (difference > 0)
                     {
-                        var text = $"{MessageUtils.GenerateRandomEmojis(3)}: The item's ({workerItem}) price has dropped by {difference}";
-
-                        await client.SendMessageAsync(
-                            peer: new InputPeerSelf(),
-                            text: text
-                        );
-
+                        await messageSender.Send_PriceDropped(workerItem, difference);
                         logger.LogInformation("Price dropped by {difference} for {workerItem}", difference, workerItem);
                     }
                 }
