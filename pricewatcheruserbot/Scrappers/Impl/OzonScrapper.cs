@@ -95,6 +95,8 @@ public class OzonScrapper(
                     await page.Debug_TakeScreenshot("ozon_email_verification_code_entered");
                 }
 
+                await browserService.SaveState();
+                
                 logger.LogInformation("Successful authorization");
                 await page.Debug_TakeScreenshot("ozon_successful_authorization");
             }

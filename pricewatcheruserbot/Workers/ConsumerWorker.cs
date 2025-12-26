@@ -98,8 +98,7 @@ public class ConsumerWorker(
                         logger.LogInformation("Price dropped by {difference} for {workerItem}", difference, workerItem);
                     }
                 }
-
-                logger.LogInformation("Price updated for {workerItem}", workerItem);
+                
                 memoryCache.Set(workerItem.Id, price);
             }
             catch (Exception ex)

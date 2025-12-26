@@ -22,7 +22,7 @@ public class BrowserService : IAsyncDisposable, IDisposable
     {
         await Initialize();
         
-        await _browserContext.StorageStateAsync(new BrowserContextStorageStateOptions() { Path = EnvironmentVariables.StorageDirectoryPath });
+        await _browserContext.StorageStateAsync(new BrowserContextStorageStateOptions() { Path = EnvironmentVariables.BrowserSessionFilePath });
     }
     
     public async Task<IPage> CreateNewPageWithinContext()

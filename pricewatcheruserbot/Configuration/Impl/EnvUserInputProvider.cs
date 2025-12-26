@@ -20,7 +20,7 @@ public class EnvUserInputProvider : IUserInputProvider
 
     public Task<string> Telegram_GetVerificationCode()
     {
-        Console.Write("Enter telegram verification code: "); var result = Console.ReadLine()!; Console.WriteLine();
+        Console.Write("Enter telegram verification code (from Telegram Chat): "); var result = Console.ReadLine()!; Console.WriteLine();
 
         return Task.FromResult(result);
     }
@@ -36,7 +36,7 @@ public class EnvUserInputProvider : IUserInputProvider
 
     public Task<string> Ozon_GetPhoneVerificationCode()
     {
-        Console.Write("Enter ozon phone verification code: "); var result = Console.ReadLine() ?? string.Empty; Console.WriteLine();
+        Console.Write("Enter ozon phone verification code (6 last digits): "); var result = Console.ReadLine() ?? string.Empty; Console.WriteLine();
 
         return Task.FromResult(result);
     }

@@ -49,7 +49,7 @@ public class WildberriesScrapper(
         public async Task<string?> GetPrice()
         {
             var locator = page
-                .Locator("//span[contains(@class, 'priceBlockPrice')]/descendant::h2").First;
+                .Locator("//span[contains(@class, 'priceBlockPrice')]").First;
 
             var result = await locator.TextContentAsync();
 
