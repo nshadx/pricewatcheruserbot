@@ -1,83 +1,20 @@
-using System.Threading.Channels;
-using Microsoft.EntityFrameworkCore;
 using pricewatcheruserbot.Browser;
 using pricewatcheruserbot.Commands;
 using pricewatcheruserbot.Configuration;
-using pricewatcheruserbot.Configuration.Impl;
-using pricewatcheruserbot.Entities;
 using pricewatcheruserbot.Scrappers;
-using pricewatcheruserbot.Scrappers.Impl;
 using pricewatcheruserbot.Services;
 using pricewatcheruserbot.Workers;
-using TL;
-using Channel = System.Threading.Channels.Channel;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddSingleton<UpdateHandler>();
-builder.Services.AddSingleton(provider =>
-{
-    var logger = provider.GetRequiredService<ILogger<WTelegram.Client>>();
-    var userInputProvider = provider.GetRequiredService<IUserInputProvider>();
-    
-    WTelegram.Helpers.Log = (logLevel, message) =>
-    {
-#pragma warning disable CA2254
-        logger.Log((LogLevel)(logLevel - 1), message);
-#pragma warning restore CA2254
-    };
-
-    var client = new WTelegram.Client(
-        userInputProvider.Telegram_GetApiId().Result,
-        userInputProvider.Telegram_GetApiHash().Result,
-        EnvironmentVariables.TelegramSessionFilePath
-    );
-    
-    return client;
-});
-
-builder.Services.AddDbContext<AppDbContext>(x =>
-{
-    x.UseSqlite(EnvironmentVariables.DbConnectionString);
-});
 builder.Services.AddMemoryCache();
-
-builder.Services.AddScoped<AddCommand.Handler>();
-builder.Services.AddScoped<ListCommand.Handler>();
-builder.Services.AddScoped<RemoveCommand.Handler>();
-
-builder.Services.AddSingleton<IScrapper, OzonScrapper>();
-builder.Services.AddSingleton<IScrapper, WildberriesScrapper>();
-builder.Services.AddSingleton<IScrapper, YandexMarketScrapper>();
-
-builder.Services.AddSingleton<BrowserService>();
-
-var channel = Channel.CreateBounded<WorkerItem>(
-    new BoundedChannelOptions(32)
-    {
-        SingleReader = true,
-        SingleWriter = true,
-        AllowSynchronousContinuations = false,
-        FullMode = BoundedChannelFullMode.Wait
-    });
-builder.Services.AddSingleton<ChannelReader<WorkerItem>>(channel);
-builder.Services.AddSingleton<ChannelWriter<WorkerItem>>(resolver =>
-{
-    var hostLifetime = resolver.GetRequiredService<IHostApplicationLifetime>();
-    
-    hostLifetime.ApplicationStopping.Register(() => { channel.Writer.Complete(); });
-    
-    return channel;
-});
-
-builder.Services.AddHostedService<ProducerWorker>();
-builder.Services.AddHostedService<ConsumerWorker>();
-
-#if DEBUG
-builder.Services.AddSingleton<IUserInputProvider, EnvUserInputProvider>();
-#else
-builder.Services.AddSingleton<IUserInputProvider, FileUserInputProvider>();
-#endif
+builder.Services.AddAppDbContext();
+builder.Services.AddTelegramClient();
+builder.Services.AddBrowserServices();
+builder.Services.AddScrappers();
+builder.Services.AddCommandHandlers();
+builder.Services.AddWorkers();
+builder.Services.AddUserInputProviders();
 
 using (var host = builder.Build())
 {
@@ -86,11 +23,9 @@ using (var host = builder.Build())
     await userInputProvider.Init();
     
     var client = host.Services.GetRequiredService<WTelegram.Client>();
-    var updateRouter = host.Services.GetRequiredService<UpdateHandler>();
     var logger = host.Services.GetRequiredService<ILogger<Program>>();
     var scrappers = host.Services.GetServices<IScrapper>();
     
-    _ = client.WithUpdateManager(updateRouter.Handle);
     await DoLogin(await userInputProvider.Telegram_GetPhoneNumber());
     
     async Task DoLogin(string loginInfo)
@@ -106,7 +41,7 @@ using (var host = builder.Build())
         }
     }
     
-    logger.LogInformation("Telegram session saved");
+    logger.LogInformation("Telegram receiver started");
     
     try
     { 
@@ -115,11 +50,11 @@ using (var host = builder.Build())
             await scrapper.Authorize();
         }
 
-        logger.LogInformation("Successful authorization in services");
+        logger.LogInformation("Successful authorization in web services");
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Failed authorization in services");
+        logger.LogError(ex, "Failed authorization in web services");
     }
 
     await using (var scope = host.Services.CreateAsyncScope())

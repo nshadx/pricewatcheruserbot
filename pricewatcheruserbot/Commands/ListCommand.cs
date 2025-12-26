@@ -9,9 +9,9 @@ public class ListCommand
 {
     public int MessageId { get; set; }
     
-    public static ListCommand Parse(string command, int messageId)
+    public static ListCommand Parse(Message message)
     {
-        return new() { MessageId = messageId };
+        return new() { MessageId = message.id };
     }
     
     public class Handler(

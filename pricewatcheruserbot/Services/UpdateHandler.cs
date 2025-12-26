@@ -4,8 +4,9 @@ using TL;
 namespace pricewatcheruserbot.Services;
 
 public class UpdateHandler(
-    IServiceProvider serviceProvider,
-    WTelegram.Client client
+    ILogger<UpdateHandler> logger,
+    WTelegram.Client client,
+    IServiceProvider serviceProvider
 )
 {
     public async Task Handle(Update update)
@@ -22,10 +23,7 @@ public class UpdateHandler(
         }
         catch (Exception ex)
         {
-            await client.SendMessageAsync(
-                peer: new InputPeerSelf(),
-                text: ex.Message
-            );
+            logger.LogError(ex, "An error occured during handle of update");
         }
     }
 
@@ -55,21 +53,20 @@ public class UpdateHandler(
             var removeCommandHandler = scope.ServiceProvider.GetRequiredService<RemoveCommand.Handler>();
 
             var text = message.message;
-            var messageId = message.id;
             
             if (text.StartsWith("/add"))
             {
-                var instance = AddCommand.Parse(text, messageId);
+                var instance = AddCommand.Parse(message);
                 await addCommandHandler.Handle(instance);
             }
             else if (text.StartsWith("/rem"))
             {
-                var instance = RemoveCommand.Parse(text, messageId);
+                var instance = RemoveCommand.Parse(message);
                 await removeCommandHandler.Handle(instance);
             }
             else if (text.StartsWith("/lst"))
             {
-                var instance = ListCommand.Parse(text, messageId);
+                var instance = ListCommand.Parse(message);
                 await listCommandHandler.Handle(instance);
             }
             else

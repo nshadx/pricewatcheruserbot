@@ -11,9 +11,9 @@ public class RemoveCommand
     public int MessageId { get; set; }
     public int Order { get; set; }
     
-    public static RemoveCommand Parse(string command, int messageId)
+    public static RemoveCommand Parse(Message message)
     {
-        var args = command["/rem".Length..];
+        var args = message.message["/rem".Length..];
         var orderString = args.Trim();
 
         if (!int.TryParse(orderString, out var order))
@@ -23,7 +23,7 @@ public class RemoveCommand
 
         return new()
         {
-            MessageId = messageId,
+            MessageId = message.id,
             Order = order
         };
     }

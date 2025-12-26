@@ -10,9 +10,9 @@ public class AddCommand
     public int MessageId { get; set; }
     public Uri Url { get; set; } = null!;
     
-    public static AddCommand Parse(string command, int messageId)
+    public static AddCommand Parse(Message message)
     {
-        var args = command["/add".Length..];
+        var args = message.message["/add".Length..];
         var urlString = args.Trim();
 
         if (!Uri.TryCreate(urlString, UriKind.Absolute, out var url))
@@ -22,7 +22,7 @@ public class AddCommand
         
         return new()
         {
-            MessageId = messageId,
+            MessageId = message.id,
             Url = url
         };
     }
