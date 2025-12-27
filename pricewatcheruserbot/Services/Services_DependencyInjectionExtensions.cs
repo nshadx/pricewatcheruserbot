@@ -53,7 +53,7 @@ public static class Services_DependencyInjectionExtensions
                 EnvironmentVariables.TelegramSessionFilePath
             );
 
-            UpdateHandler handler = new(updateHandlerLogger, client, provider);
+            UpdateHandler handler = new(provider, updateHandlerLogger, client);
 
             _ = client.WithUpdateManager(handler.Handle);
     

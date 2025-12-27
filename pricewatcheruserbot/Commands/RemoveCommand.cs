@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using pricewatcheruserbot.Services;
 using TL;
 
@@ -53,7 +52,6 @@ public class RemoveCommand
             workerItemTracker.Remove(workerItem);
 
             await messageManager.UpdateAllLists();
-            await messageManager.DeleteCommandMessage(command.MessageId);
         }
     }
 }

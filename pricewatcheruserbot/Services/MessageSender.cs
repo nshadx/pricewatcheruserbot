@@ -11,7 +11,7 @@ public class MessageSender(
     public async Task<Message> Send_PriceDropped(WorkerItem workerItem, double difference)
     {
         var message = await client.SendMessageAsync(
-            peer: new InputPeerSelf(),
+            peer: InputPeer.Self,
             text: $"{MessageUtils.GenerateRandomEmojis(3)}: The item's ({workerItem}) price has dropped by {difference}"
         );
 
@@ -21,7 +21,7 @@ public class MessageSender(
     public async Task<Message> Send_WorkerItemList(IReadOnlyCollection<WorkerItem> workerItems)
     {
         var message = await client.SendMessageAsync(
-            peer: new InputPeerSelf(),
+            peer: InputPeer.Self,
             text: GetText_WorkerItemList(workerItems)
         );
 
@@ -31,7 +31,7 @@ public class MessageSender(
     public async Task Edit_WorkerItemList(IReadOnlyCollection<WorkerItem> workerItems, SentMessage message)
     {
         _ = await client.Messages_EditMessage(
-            peer: new InputPeerSelf(),
+            peer: InputPeer.Self,
             id: message.TelegramId,
             message: GetText_WorkerItemList(workerItems)
         );

@@ -39,23 +39,19 @@ public class MessageManager(
         await foreach (var message in listMessages)
         {
             await client.DeleteMessages(
-                peer: new InputPeerSelf(),
+                peer: InputPeer.Self,
                 id: message.TelegramId
             );
             dbContext.SentMessages.Remove(message);
         }
 
-        await dbContext.SentMessages.AddAsync(new SentMessage
+        SentMessage sentMessage = new()
         {
             TelegramId = newMessage.id,
             Type = MessageType.LIST
-        });
+        };
 
+        await dbContext.SentMessages.AddAsync(sentMessage);
         await dbContext.SaveChangesAsync();
     }
-
-    public Task DeleteCommandMessage(int messageId) => client.DeleteMessages(
-        peer: new InputPeerSelf(), 
-        id: messageId
-    );
 }

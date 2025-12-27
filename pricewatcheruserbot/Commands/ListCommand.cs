@@ -19,7 +19,6 @@ public class ListCommand
         public async Task Handle(ListCommand command)
         {
             await messageManager.SetCurrentNewList();
-            await messageManager.DeleteCommandMessage(command.MessageId);
         }
     }
 }

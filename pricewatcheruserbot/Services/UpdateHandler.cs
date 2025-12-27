@@ -4,9 +4,9 @@ using TL;
 namespace pricewatcheruserbot.Services;
 
 public class UpdateHandler(
+    IServiceProvider serviceProvider,
     ILogger<UpdateHandler> logger,
-    WTelegram.Client client,
-    IServiceProvider serviceProvider
+    WTelegram.Client client
 )
 {
     public async Task Handle(Update update)
@@ -53,25 +53,35 @@ public class UpdateHandler(
             var removeCommandHandler = scope.ServiceProvider.GetRequiredService<RemoveCommand.Handler>();
 
             var text = message.message;
-            
-            if (text.StartsWith("/add"))
+
+            try
             {
-                var instance = AddCommand.Parse(message);
-                await addCommandHandler.Handle(instance);
+                if (text.StartsWith("/add"))
+                {
+                    var instance = AddCommand.Parse(message);
+                    await addCommandHandler.Handle(instance);
+                }
+                else if (text.StartsWith("/rem"))
+                {
+                    var instance = RemoveCommand.Parse(message);
+                    await removeCommandHandler.Handle(instance);
+                }
+                else if (text.StartsWith("/lst"))
+                {
+                    var instance = ListCommand.Parse(message);
+                    await listCommandHandler.Handle(instance);
+                }
+                else
+                {
+                    throw new ArgumentException($"Unknown command: {text}");
+                }
             }
-            else if (text.StartsWith("/rem"))
+            finally
             {
-                var instance = RemoveCommand.Parse(message);
-                await removeCommandHandler.Handle(instance);
-            }
-            else if (text.StartsWith("/lst"))
-            {
-                var instance = ListCommand.Parse(message);
-                await listCommandHandler.Handle(instance);
-            }
-            else
-            {
-                throw new ArgumentException($"Unknown command: {text}");
+                await client.DeleteMessages(
+                    peer: InputPeer.Self,
+                    id: message.id
+                );
             }
         }
     }
