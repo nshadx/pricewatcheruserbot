@@ -26,9 +26,7 @@ public class WildberriesScrapper(
 
         Logger.LogInformation("Price was received successfully"); 
         await page.Debug_TakeScreenshot("wildberries_price_received");
-            
-        await BrowserService.SaveState();
-            
+        
         return priceValue;
     }
 

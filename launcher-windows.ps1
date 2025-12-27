@@ -2,10 +2,10 @@
 $repoUrl    = "https://github.com/nshadx/pricewatcheruserbot"
 $repoName   = "pricewatcheruserbot"
 $runnable   = "pricewatcheruserbot"
-$data       = "data"
 $buildCfg   = "Release"
 
-Write-Host "!!!TURN OFF VPN!!!"
+Write-Host "!!!TURN OFF VPN!!!" -ForegroundColor Yellow
+Start-Sleep -Seconds 5
 
 # ================= ПРОВЕРКИ ==================
 foreach ($cmd in @("git", "dotnet")) {
@@ -56,9 +56,8 @@ if (-not (Test-Path ".env")) {
     $OzonPhoneNumber     = Read-Host "Enter Ozon phone number (without contry code)"
 
     @"
-StorageDirectoryPath="$data/"
-TelegramSessionFilePath="$data/telegram-session"
-BrowserSessionFilePath="$data/browser-session"
+TelegramSessionFilePath="telegram-session"
+BrowserSessionFilePath="browser-session"
 DbConnectionString="Data Source=app.db"
 
 TelegramPhoneNumber=$TelegramPhoneNumber
@@ -72,10 +71,6 @@ OzonPhoneNumber=$OzonPhoneNumber
 }
 else {
     Write-Host ".env already exists, skipping..." -ForegroundColor Green
-}
-
-if (-not (Test-Path "./$data")) {
-    New-Item -ItemType Directory -Path "./$data" -Force | Out-Null
 }
 
 # ================= PLAYWRIGHT ================

@@ -30,9 +30,7 @@ public class YandexMarketScrapper(
             
         var priceString = await pageObject.GetPrice();
         var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
-
-        await BrowserService.SaveState();
-            
+        
         Logger.LogInformation("Price was received successfully"); 
         await page.Debug_TakeScreenshot("yandex_market_price_received");
 

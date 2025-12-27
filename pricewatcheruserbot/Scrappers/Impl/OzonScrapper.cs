@@ -85,8 +85,6 @@ public class OzonScrapper(
                     Logger.LogInformation("Email verification code entered");
                     await page.Debug_TakeScreenshot("ozon_email_verification_code_entered");
                 }
-
-                await BrowserService.SaveState();
                 
                 Logger.LogInformation("Successful authorization");
                 await page.Debug_TakeScreenshot("ozon_successful_authorization");
@@ -101,9 +99,7 @@ public class OzonScrapper(
             
         var priceString = await pageObject.GetPrice();
         var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
-
-        await BrowserService.SaveState();
-            
+        
         Logger.LogInformation("Price was received successfully"); 
         await page.Debug_TakeScreenshot("ozon_price_received");
             

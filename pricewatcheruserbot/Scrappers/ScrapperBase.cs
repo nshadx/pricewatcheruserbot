@@ -28,6 +28,7 @@ public abstract class ScrapperBase
         try
         {
             await AuthorizeCore(page);
+            await BrowserService.SaveState();
         }
         finally
         {
@@ -54,7 +55,10 @@ public abstract class ScrapperBase
 
         try
         {
-            return await GetPriceCore(page);
+            var result = await GetPriceCore(page);
+            await BrowserService.SaveState();
+            
+            return result;
         }
         finally
         {
