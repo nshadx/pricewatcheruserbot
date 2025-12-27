@@ -86,7 +86,7 @@ if (-not $playwright) {
 }
 
 Write-Host "Playwright install..." -ForegroundColor Cyan
-& $playwright.FullName install
+pwsh $playwright.FullName install
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 # ================= RUN =======================
