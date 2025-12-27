@@ -1,11 +1,12 @@
 ﻿# ================= НАСТРОЙКИ =================
-$repoUrl    = "https://github.com/nshadx/pricewatcheruserbot"
-$repoName   = "pricewatcheruserbot"
-$runnable   = "pricewatcheruserbot"
-$buildCfg   = "Release"
+$repoUrl     = "https://github.com/nshadx/pricewatcheruserbot"
+$repoName    = "pricewatcheruserbot"
+$projectName = "pricewatcheruserbot"
+$buildCfg    = "Release"
 
 Write-Host "!!!TURN OFF VPN!!!" -ForegroundColor Yellow
-Start-Sleep -Seconds 5
+
+Start-Sleep -Seconds 2
 
 # ================= ПРОВЕРКИ ==================
 
@@ -30,14 +31,18 @@ if (-not (Test-Path $repoName)) {
     Set-Location $repoName
     git pull --rebase
     if ($LASTEXITCODE -ne 0) { exit 1 }
+    Set-Location ..
 }
 
 # ================= BUILD =====================
 Write-Host "Publishing..." -ForegroundColor Cyan
 
-dotnet publish `
+$project = Join-Path $projectName "$projectName.csproj";
+
+dotnet publish "$project" `
+    --sc `
+    -v q `
     -c $buildCfg `
-    --self-contained `
     -o "publish"
 
 if ($LASTEXITCODE -ne 0) {
@@ -90,7 +95,7 @@ pwsh $playwright.FullName install
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 # ================= RUN =======================
-$exe = Get-ChildItem -Recurse -Filter "$runnable.exe" | Select-Object -First 1
+$exe = Get-ChildItem -Recurse -Filter "$projectName.exe" | Select-Object -First 1
 
 Write-Host "Starting (interactive)..." -ForegroundColor Green
 Start-Process `
