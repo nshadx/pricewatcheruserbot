@@ -8,11 +8,15 @@ Write-Host "!!!TURN OFF VPN!!!" -ForegroundColor Yellow
 Start-Sleep -Seconds 5
 
 # ================= ПРОВЕРКИ ==================
-foreach ($cmd in @("git", "dotnet")) {
-    if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
-        Write-Error "$cmd not found in PATH"
+
+if (-not (Get-Command "dotnet" -ErrorAction SilentlyContinue)) {
+        Write-Host "'dotnet' command not found. Download this from: https://dotnet.microsoft.com/en-us/download/dotnet/10.0" --ForegroundColor Yellow
         exit 1
-    }
+}
+
+if (-not (Get-Command "git" -ErrorAction SilentlyContinue)) {
+        Write-Host "'git' command not found. Download this from: https://git-scm.com/install" --ForegroundColor Yellow
+        exit 1
 }
 
 # ================= GIT =======================
@@ -22,11 +26,11 @@ if (-not (Test-Path $repoName)) {
     if ($LASTEXITCODE -ne 0) { exit 1 }
 } else {
     Write-Host "Repository found, performing update..." -ForegroundColor Cyan
-    Set-Location $repoName
     git pull --rebase
     if ($LASTEXITCODE -ne 0) { exit 1 }
-    Set-Location ..
 }
+
+Set-Location $repoName
 
 # ================= BUILD =====================
 Write-Host "Publishing..." -ForegroundColor Cyan

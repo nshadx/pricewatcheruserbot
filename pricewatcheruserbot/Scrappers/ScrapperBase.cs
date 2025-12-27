@@ -51,7 +51,7 @@ public abstract class ScrapperBase
         await page.GotoAsync(url.ToString());
         
         Logger.LogInformation("Page loaded");
-        await page.Debug_TakeScreenshot("ozon_price_page_loaded");
+        await page.Debug_TakeScreenshot("price_page_loaded");
 
         try
         {
