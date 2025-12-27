@@ -24,13 +24,13 @@ if (-not (Test-Path $repoName)) {
     Write-Host "Cloning repository..." -ForegroundColor Cyan
     git clone $repoUrl
     if ($LASTEXITCODE -ne 0) { exit 1 }
+    Set-Location $repoName
 } else {
     Write-Host "Repository found, performing update..." -ForegroundColor Cyan
+    Set-Location $repoName
     git pull --rebase
     if ($LASTEXITCODE -ne 0) { exit 1 }
 }
-
-Set-Location $repoName
 
 # ================= BUILD =====================
 Write-Host "Publishing..." -ForegroundColor Cyan
