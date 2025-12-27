@@ -3,10 +3,13 @@
 У маркетплейсов по типу Ozon, WB, Yandex.Market нет оповещений на конкретные лоты при снижении цены (как на том же Авито). Потому я написал помощника, выполняющего эту функцию.
 Работает путем опроса каждые N секунд url-адресов.
 
-# Как установить
+# Как установить (Windows)
 
 1. Зайти [вот сюда](https://my.telegram.org/auth) -> API Development tools -> Create New Application (Type=Desktop) -> получить `api_id` и `api_hash`.
-2. In progress
+2. Скачать [вот этот скрипт](https://github.com/nshadx/pricewatcheruserbot/blob/master/pricewatcheruserbot/launcher-windows.ps1)
+3. Запустить Windows PowerShell (Run As Administrator)
+4. `cd <путь до папки со скриптом>`
+5. `.\launcher-windows.ps1`
 
 # Команды
 
