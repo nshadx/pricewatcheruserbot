@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using pricewatcheruserbot.Entities;
+using pricewatcheruserbot.Services;
 using TL;
 
-namespace pricewatcheruserbot.Services;
+namespace pricewatcheruserbot.Telegram;
 
 public class MessageManager(
     WTelegram.Client client,
@@ -53,5 +54,13 @@ public class MessageManager(
 
         await dbContext.SentMessages.AddAsync(sentMessage);
         await dbContext.SaveChangesAsync();
+    }
+
+    public async Task DeleteMessage(Message message)
+    {
+        await client.DeleteMessages(
+            peer: InputPeer.Self,
+            id: message.id
+        );
     }
 }

@@ -1,14 +1,15 @@
 ﻿using pricewatcheruserbot.Commands;
 using TL;
 
-namespace pricewatcheruserbot.Services;
+namespace pricewatcheruserbot.Telegram;
 
 public class UpdateHandler(
     IServiceProvider serviceProvider,
-    ILogger<UpdateHandler> logger,
-    WTelegram.Client client
+    ILogger<UpdateHandler> logger
 )
 {
+    public long UserId { get; set; }
+    
     public async Task Handle(Update update)
     {
         var task = update switch
@@ -54,37 +55,27 @@ public class UpdateHandler(
 
             var text = message.message;
 
-            try
+            if (text.StartsWith("/add"))
             {
-                if (text.StartsWith("/add"))
-                {
-                    var instance = AddCommand.Parse(message);
-                    await addCommandHandler.Handle(instance);
-                }
-                else if (text.StartsWith("/rem"))
-                {
-                    var instance = RemoveCommand.Parse(message);
-                    await removeCommandHandler.Handle(instance);
-                }
-                else if (text.StartsWith("/lst"))
-                {
-                    var instance = ListCommand.Parse(message);
-                    await listCommandHandler.Handle(instance);
-                }
-                else
-                {
-                    throw new ArgumentException($"Unknown command: {text}");
-                }
+                var instance = AddCommand.Parse(message);
+                await addCommandHandler.Handle(instance);
             }
-            finally
+            else if (text.StartsWith("/rem"))
             {
-                await client.DeleteMessages(
-                    peer: InputPeer.Self,
-                    id: message.id
-                );
+                var instance = RemoveCommand.Parse(message);
+                await removeCommandHandler.Handle(instance);
+            }
+            else if (text.StartsWith("/lst"))
+            {
+                var instance = ListCommand.Parse(message);
+                await listCommandHandler.Handle(instance);
+            }
+            else
+            {
+                throw new ArgumentException($"Unknown command: {text}");
             }
         }
     }
 
-    private bool SentToSavedMessages(MessageBase message) => message.Peer is PeerUser pu && pu.user_id == client.UserId;
+    private bool SentToSavedMessages(MessageBase message) => message.Peer is PeerUser pu && pu.user_id == UserId;
 }

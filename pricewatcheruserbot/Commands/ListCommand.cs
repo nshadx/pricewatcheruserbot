@@ -1,15 +1,14 @@
 ﻿using pricewatcheruserbot.Services;
+using pricewatcheruserbot.Telegram;
 using TL;
 
 namespace pricewatcheruserbot.Commands;
 
-public class ListCommand
+public record ListCommand(Message Message)
 {
-    public int MessageId { get; set; }
-    
     public static ListCommand Parse(Message message)
     {
-        return new() { MessageId = message.id };
+        return new(message);
     }
     
     public class Handler(
@@ -19,6 +18,7 @@ public class ListCommand
         public async Task Handle(ListCommand command)
         {
             await messageManager.SetCurrentNewList();
+            await messageManager.DeleteMessage(command.Message);
         }
     }
 }

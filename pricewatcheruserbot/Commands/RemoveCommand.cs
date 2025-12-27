@@ -1,14 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using pricewatcheruserbot.Services;
+using pricewatcheruserbot.Telegram;
 using TL;
 
 namespace pricewatcheruserbot.Commands;
 
-public class RemoveCommand
+public record RemoveCommand(Message Message, int Order)
 {
-    public int MessageId { get; set; }
-    public int Order { get; set; }
-    
     public static RemoveCommand Parse(Message message)
     {
         var args = message.message["/rem".Length..];
@@ -19,11 +17,7 @@ public class RemoveCommand
             throw new ArgumentException($"Unknown order: {orderString}");
         }
 
-        return new()
-        {
-            MessageId = message.id,
-            Order = order
-        };
+        return new(message, order);
     }
     
     public class Handler(
@@ -52,6 +46,7 @@ public class RemoveCommand
             workerItemTracker.Remove(workerItem);
 
             await messageManager.UpdateAllLists();
+            await messageManager.DeleteMessage(command.Message);
         }
     }
 }

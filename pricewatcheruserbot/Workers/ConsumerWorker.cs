@@ -3,6 +3,7 @@ using pricewatcheruserbot.Entities;
 using pricewatcheruserbot.Scrappers;
 using pricewatcheruserbot.Scrappers.Impl;
 using pricewatcheruserbot.Services;
+using pricewatcheruserbot.Telegram;
 
 namespace pricewatcheruserbot.Workers;
 
@@ -14,9 +15,9 @@ public class ConsumerWorker(
     MessageSender messageSender
 ) : BackgroundService
 {
-    private readonly Channel<(IScrapper Scrapper, WorkerItem WorkerItem)> _ozonChannel = Channel.CreateBounded<(IScrapper Scrapper, WorkerItem WorkerItem)>(1);
-    private readonly Channel<(IScrapper Scrapper, WorkerItem WorkerItem)> _yandexChannel = Channel.CreateBounded<(IScrapper Scrapper, WorkerItem WorkerItem)>(1);
-    private readonly Channel<(IScrapper Scrapper, WorkerItem WorkerItem)> _wildberriesChannel = Channel.CreateBounded<(IScrapper Scrapper, WorkerItem WorkerItem)>(1);
+    private readonly Channel<(ScrapperBase Scrapper, WorkerItem WorkerItem)> _ozonChannel = Channel.CreateBounded<(ScrapperBase Scrapper, WorkerItem WorkerItem)>(1);
+    private readonly Channel<(ScrapperBase Scrapper, WorkerItem WorkerItem)> _yandexChannel = Channel.CreateBounded<(ScrapperBase Scrapper, WorkerItem WorkerItem)>(1);
+    private readonly Channel<(ScrapperBase Scrapper, WorkerItem WorkerItem)> _wildberriesChannel = Channel.CreateBounded<(ScrapperBase Scrapper, WorkerItem WorkerItem)>(1);
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -28,7 +29,7 @@ public class ConsumerWorker(
             HandleWorkerItem(_wildberriesChannel, stoppingToken)
         );
 
-        Dictionary<Type, Channel<(IScrapper Scrapper, WorkerItem WorkerItem)>> router = new()
+        Dictionary<Type, Channel<(ScrapperBase Scrapper, WorkerItem WorkerItem)>> router = new()
         {
             [typeof(OzonScrapper)] = _ozonChannel,
             [typeof(WildberriesScrapper)] = _wildberriesChannel,
@@ -60,13 +61,13 @@ public class ConsumerWorker(
         await base.StopAsync(cancellationToken);
     }
 
-    private async Task HandleWorkerItem(ChannelReader<(IScrapper Scrapper, WorkerItem WorkerItem)> channel, CancellationToken stoppingToken)
+    private async Task HandleWorkerItem(ChannelReader<(ScrapperBase Scrapper, WorkerItem WorkerItem)> channel, CancellationToken stoppingToken)
     {
         await foreach (var (scrapper, workerItem) in channel.ReadAllAsync(stoppingToken))
         {
             try
             {
-                logger.LogInformation("Start handling {workerItem}...", workerItem);
+                logger.LogInformation("Start handle {workerItem}...", workerItem);
                 
                 var price = await scrapper.GetPrice(workerItem.Url);
 
@@ -80,7 +81,7 @@ public class ConsumerWorker(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Item handling completed with error");
+                logger.LogError(ex, "Item handle completed with error");
                 continue;
             }
             finally

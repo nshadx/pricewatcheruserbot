@@ -6,44 +6,30 @@ namespace pricewatcheruserbot.Scrappers.Impl;
 public class WildberriesScrapper(
     ILogger<WildberriesScrapper> logger,
     BrowserService browserService
-) : IScrapper
+) : ScrapperBase(logger, browserService)
 {
-    public Task Authorize()
+    public override Uri Host { get; } = new("https://wildberries.ru");
+    
+    protected override Task AuthorizeCore(IPage page)
     {
         return Task.CompletedTask;
     }
 
-    public async Task<double> GetPrice(Uri url)
+    protected override async Task<double> GetPriceCore(IPage page)
     {
-        var page = await browserService.CreateNewPageWithinContext();
-        
-        logger.LogInformation("Page init...");
-        
-        await page.GotoAsync(url.ToString());
-        
-        logger.LogInformation("Page loaded");
-        await page.Debug_TakeScreenshot("wildberries_price_page_loaded");
-        
-        try
-        {
-            PageObject pageObject = new(page);
+        PageObject pageObject = new(page);
             
-            logger.LogInformation("Begin price selecting...");
+        Logger.LogInformation("Begin price selecting...");
             
-            var priceString = await pageObject.GetPrice();
-            var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
+        var priceString = await pageObject.GetPrice();
+        var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
 
-            logger.LogInformation("Price was received successfully"); 
-            await page.Debug_TakeScreenshot("wildberries_price_received");
+        Logger.LogInformation("Price was received successfully"); 
+        await page.Debug_TakeScreenshot("wildberries_price_received");
             
-            await browserService.SaveState();
+        await BrowserService.SaveState();
             
-            return priceValue;
-        }
-        finally
-        {
-            await page.CloseAsync();
-        }
+        return priceValue;
     }
 
     private class PageObject(IPage page)

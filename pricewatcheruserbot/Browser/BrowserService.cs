@@ -83,21 +83,31 @@ public class BrowserService : IAsyncDisposable, IDisposable
     
     public void Dispose()
     {
-        _instance?.Dispose();
+        if (_browserContext is IDisposable browserContextDisposable)
+        {
+            browserContextDisposable.Dispose();
+        }
         
         if (_browser is IDisposable browserDisposable)
         {
             browserDisposable.Dispose();
         }
-
-        if (_browserContext is IDisposable browserContextDisposable)
-        {
-            browserContextDisposable.Dispose();
-        }
+        
+        _instance?.Dispose();
     }
 
     public async ValueTask DisposeAsync()
     {
+        if (_browserContext != null)
+        {
+            await _browserContext.DisposeAsync();
+        }
+        
+        if (_browser != null)
+        {
+            await _browser.DisposeAsync();
+        }
+        
         if (_instance is IAsyncDisposable instanceAsyncDisposable)
         {
             await instanceAsyncDisposable.DisposeAsync();
@@ -105,16 +115,6 @@ public class BrowserService : IAsyncDisposable, IDisposable
         else
         {
             _instance?.Dispose();
-        }
-
-        if (_browser != null)
-        {
-            await _browser.DisposeAsync();
-        }
-
-        if (_browserContext != null)
-        {
-            await _browserContext.DisposeAsync();
         }
     }
 }

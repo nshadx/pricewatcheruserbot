@@ -4,32 +4,32 @@ namespace pricewatcheruserbot.Scrappers;
 
 public class ScrapperProvider
 {
-    private readonly IScrapper _ozonScrapper;
-    private readonly IScrapper _wildberriesScrapper;
-    private readonly IScrapper _yandexMarketScrapper;
+    private readonly ScrapperBase _ozonScrapperBase;
+    private readonly ScrapperBase _wildberriesScrapperBase;
+    private readonly ScrapperBase _yandexMarketScrapperBase;
     
-    public ScrapperProvider(IEnumerable<IScrapper> scrappers)
+    public ScrapperProvider(IEnumerable<ScrapperBase> scrappers)
     {
         var array = scrappers.ToArray();
 
-        _ozonScrapper = array
+        _ozonScrapperBase = array
             .OfType<OzonScrapper>()
             .Single();
-        _wildberriesScrapper = array
+        _wildberriesScrapperBase = array
             .OfType<WildberriesScrapper>()
             .Single();
-        _yandexMarketScrapper = array
+        _yandexMarketScrapperBase = array
             .OfType<YandexMarketScrapper>()
             .Single();
     }
 
-    public IScrapper GetByUrl(Uri url)
+    public ScrapperBase GetByUrl(Uri url)
     {
         return url.Host switch
         {
-            "www.ozon.ru" or "ozon.ru" => _ozonScrapper,
-            "www.wildberries.ru" or "wildberries.ru" => _wildberriesScrapper,
-            "www.market.yandex.ru" or "market.yandex.ru" => _yandexMarketScrapper,
+            "www.ozon.ru" or "ozon.ru" => _ozonScrapperBase,
+            "www.wildberries.ru" or "wildberries.ru" => _wildberriesScrapperBase,
+            "www.market.yandex.ru" or "market.yandex.ru" => _yandexMarketScrapperBase,
             var host => throw new InvalidOperationException($"Cannot resolve scrapper for host '{host}'")
         };
     }

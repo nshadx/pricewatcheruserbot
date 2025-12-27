@@ -1,15 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using pricewatcheruserbot.Entities;
 using pricewatcheruserbot.Services;
+using pricewatcheruserbot.Telegram;
 using TL;
 
 namespace pricewatcheruserbot.Commands;
 
-public class AddCommand
+public record AddCommand(Message Message, Uri Url)
 {
-    public int MessageId { get; set; }
-    public Uri Url { get; set; } = null!;
-    
     public static AddCommand Parse(Message message)
     {
         var args = message.message["/add".Length..];
@@ -20,11 +18,7 @@ public class AddCommand
             throw new ArgumentException($"Unknown url format: {urlString}");
         }
         
-        return new()
-        {
-            MessageId = message.id,
-            Url = url
-        };
+        return new(message, url);
     }
 
     public class Handler(
@@ -42,8 +36,9 @@ public class AddCommand
                 Order = newOrder
             });
             await dbContext.SaveChangesAsync();
-            
+
             await messageManager.UpdateAllLists();
+            await messageManager.DeleteMessage(command.Message);
         }
     }
 }

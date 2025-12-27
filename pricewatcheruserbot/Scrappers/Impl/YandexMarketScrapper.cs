@@ -6,53 +6,37 @@ namespace pricewatcheruserbot.Scrappers.Impl;
 public class YandexMarketScrapper(
     ILogger<YandexMarketScrapper> logger,
     BrowserService browserService
-) : IScrapper
+) : ScrapperBase(logger, browserService)
 {
-    public Task Authorize()
+    public override Uri Host { get; } = new("https://market.yandex.ru");
+    
+    protected override Task AuthorizeCore(IPage page)
     {
         return Task.CompletedTask;
     }
 
-    public async Task<double> GetPrice(Uri url)
+    protected override async Task<double> GetPriceCore(IPage page)
     {
-        var page = await browserService.CreateNewPageWithinContext();
-        
-        logger.LogInformation("Page init...");
-        
-        await page.GotoAsync(url.ToString());
-        
-        logger.LogInformation("Page loaded");
-        await page.Debug_TakeScreenshot("yandex_market_price_page_loaded");
-        
-        try
-        {
-            await page.GotoAsync(url.ToString());
+        PageObject pageObject = new(page);
 
-            PageObject pageObject = new(page);
+        Logger.LogInformation("Trying to close login box...");
+            
+        await pageObject.CloseLoginBox();
+            
+        Logger.LogInformation("Login box closed");
+        await page.Debug_TakeScreenshot("yandex_market_login_box_closed");
+            
+        Logger.LogInformation("Begin price selecting...");
+            
+        var priceString = await pageObject.GetPrice();
+        var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
 
-            logger.LogInformation("Trying to close login box...");
+        await BrowserService.SaveState();
             
-            await pageObject.CloseLoginBox();
-            
-            logger.LogInformation("Login box closed");
-            await page.Debug_TakeScreenshot("yandex_market_login_box_closed");
-            
-            logger.LogInformation("Begin price selecting...");
-            
-            var priceString = await pageObject.GetPrice();
-            var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
+        Logger.LogInformation("Price was received successfully"); 
+        await page.Debug_TakeScreenshot("yandex_market_price_received");
 
-            await browserService.SaveState();
-            
-            logger.LogInformation("Price was received successfully"); 
-            await page.Debug_TakeScreenshot("yandex_market_price_received");
-
-            return priceValue;
-        }
-        finally
-        {
-            await page.CloseAsync();
-        }
+        return priceValue;
     }
 
     private class PageObject(IPage page)

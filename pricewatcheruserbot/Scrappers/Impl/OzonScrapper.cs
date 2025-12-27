@@ -5,144 +5,109 @@ using pricewatcheruserbot.Configuration;
 namespace pricewatcheruserbot.Scrappers.Impl;
 
 public class OzonScrapper(
+    IUserInputProvider userInputProvider,
     ILogger<OzonScrapper> logger,
-    BrowserService browserService,
-    IUserInputProvider userInputProvider
-) : IScrapper
+    BrowserService browserService
+) : ScrapperBase(logger, browserService)
 {
-    public async Task Authorize()
+    public override Uri Host { get; } = new("https://ozon.ru");
+    
+    protected override async Task AuthorizeCore(IPage page)
     {
-        var page = await browserService.CreateNewPageWithinContext();
-        
-        logger.LogInformation("Page init...");
-        
-        await page.GotoAsync("https://ozon.ru", new PageGotoOptions() { WaitUntil = WaitUntilState.NetworkIdle });
-        
-        logger.LogInformation("Page loaded");
-        await page.Debug_TakeScreenshot("ozon_authorization_page_loaded");
-        
-        try
-        {
-            PageObject pageObject = new(page);
+        PageObject pageObject = new(page);
 
-            logger.LogInformation("Check for login requirement...");
+            Logger.LogInformation("Check for login requirement...");
 
             var requiresLogin = await pageObject.RequiresLogin();
             
-            logger.LogInformation("Login requirement check completed");
+            Logger.LogInformation("Login requirement check completed");
             await page.Debug_TakeScreenshot("ozon_login_requirement_check");
             
             if (requiresLogin)
             {
-                logger.LogInformation("Begin login...");
+                Logger.LogInformation("Begin login...");
                 await page.Debug_TakeScreenshot("ozon_begin_login");
                 
                 await pageObject.OpenLoginForm();
 
-                logger.LogInformation("Login form opened");
+                Logger.LogInformation("Login form opened");
                 await page.Debug_TakeScreenshot("ozon_login_form_opened");
                 
-                logger.LogInformation("Phone number requested");
+                Logger.LogInformation("Phone number requested");
 
                 var phoneNumber = await userInputProvider.Ozon_GetPhoneNumber();
                 await pageObject.EnterPhoneNumber(phoneNumber);
                 
-                logger.LogInformation("Phone number entered");
+                Logger.LogInformation("Phone number entered");
                 await page.Debug_TakeScreenshot("ozon_phone_number_entered");
                 
-                logger.LogInformation("Submitting form...");
+                Logger.LogInformation("Submitting form...");
                 
                 await pageObject.LoginSubmit();
                 
-                logger.LogInformation("Form submitted");
+                Logger.LogInformation("Form submitted");
                 await  page.Debug_TakeScreenshot("ozon_form_submitted");
                 
                 var isPhoneInvalid = await pageObject.IsPhoneNumberInvalid();
                 if (isPhoneInvalid)
                 {
-                    logger.LogError("Invalid phone number entered");
+                    Logger.LogError("Invalid phone number entered");
                     return;
                 }
                 
-                logger.LogInformation("Select code via phone authentication way...");
+                Logger.LogInformation("Select code via phone authentication way...");
                 
                 await pageObject.SelectAnotherLoginWay();
                 
-                logger.LogInformation("Code via phone authentication way selected");
+                Logger.LogInformation("Code via phone authentication way selected");
                 await page.Debug_TakeScreenshot("ozon_authentication_via_phone");
 
-                logger.LogInformation("Phone verification code requested");
+                Logger.LogInformation("Phone verification code requested");
                 
                 var code = await userInputProvider.Ozon_GetPhoneVerificationCode();
                 await pageObject.EnterCode(code);
                 
-                logger.LogInformation("Phone verification code entered");
+                Logger.LogInformation("Phone verification code entered");
                 await page.Debug_TakeScreenshot("ozon_phone_verification_code_entered");
 
-                logger.LogInformation("Check for email verification requirement...");
+                Logger.LogInformation("Check for email verification requirement...");
                 
                 var requiresEmail = await pageObject.IsEmailVerificationRequired();
                 if (requiresEmail)
                 {
                     await pageObject.SelectEmailVerification();
                     
-                    logger.LogInformation("Email verification requested");
+                    Logger.LogInformation("Email verification requested");
                     
                     var emailCode = await userInputProvider.Ozon_GetEmailVerificationCode();
                     await pageObject.EnterCode(emailCode);
                     
-                    logger.LogInformation("Email verification code entered");
+                    Logger.LogInformation("Email verification code entered");
                     await page.Debug_TakeScreenshot("ozon_email_verification_code_entered");
                 }
 
-                await browserService.SaveState();
+                await BrowserService.SaveState();
                 
-                logger.LogInformation("Successful authorization");
+                Logger.LogInformation("Successful authorization");
                 await page.Debug_TakeScreenshot("ozon_successful_authorization");
             }
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to authorize");
-        }
-        finally
-        {
-            await page.CloseAsync();
-        }
     }
 
-    public async Task<double> GetPrice(Uri url)
+    protected override async Task<double> GetPriceCore(IPage page)
     {
-        var page = await browserService.CreateNewPageWithinContext();
-        
-        logger.LogInformation("Page init...");
-        
-        page.SetDefaultTimeout(15000);
-        await page.GotoAsync(url.ToString());
-        
-        logger.LogInformation("Page loaded");
-        await page.Debug_TakeScreenshot("ozon_price_page_loaded");
-        
-        try
-        {
-            PageObject pageObject = new(page);
+        PageObject pageObject = new(page);
             
-            logger.LogInformation("Begin price selecting...");
+        Logger.LogInformation("Begin price selecting...");
             
-            var priceString = await pageObject.GetPrice();
-            var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
+        var priceString = await pageObject.GetPrice();
+        var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
 
-            await browserService.SaveState();
+        await BrowserService.SaveState();
             
-            logger.LogInformation("Price was received successfully"); 
-            await page.Debug_TakeScreenshot("ozon_price_received");
+        Logger.LogInformation("Price was received successfully"); 
+        await page.Debug_TakeScreenshot("ozon_price_received");
             
-            return priceValue;
-        }
-        finally
-        {
-            await page.CloseAsync();
-        }
+        return priceValue;
     }
 
     private class PageObject(IPage page)

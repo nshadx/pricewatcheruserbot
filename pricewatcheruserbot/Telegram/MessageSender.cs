@@ -1,8 +1,7 @@
 ﻿using pricewatcheruserbot.Entities;
-using pricewatcheruserbot.Workers;
 using TL;
 
-namespace pricewatcheruserbot.Services;
+namespace pricewatcheruserbot.Telegram;
 
 public class MessageSender(
     WTelegram.Client client
