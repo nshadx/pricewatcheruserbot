@@ -1,8 +1,11 @@
 ﻿using Microsoft.Playwright;
+using pricewatcheruserbot.Browser.Impl;
 
 namespace pricewatcheruserbot.Browser.Patchers;
 
-public class WebDriverPatcher : IPatcher
+public class WebDriverPatcher(
+    IServiceProvider serviceProvider
+) : IPatcher
 {
     public Task BeforeLaunch(BrowserTypeLaunchOptions options)
     {
@@ -18,13 +21,16 @@ public class WebDriverPatcher : IPatcher
         return Task.CompletedTask;
     }
 
-    public Task OnNewContextCreated(BrowserNewContextOptions options)
+    public async Task OnNewContextCreated(BrowserNewContextOptions options)
     {
-        options.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+        await using (var scope = serviceProvider.CreateAsyncScope())
+        {
+            var userAgentProvider = scope.ServiceProvider.GetRequiredService<UserAgentProvider>();
+            
+            options.UserAgent = await userAgentProvider.GetRandomUserAgent("Chrome");
+        }
         options.ViewportSize = new ViewportSize() { Height = 1080, Width = 1920 };
         options.Locale = "ru-RU";
-
-        return Task.CompletedTask;
     }
 
     public async Task OnPageCreated(IPage page)

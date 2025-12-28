@@ -6,6 +6,7 @@ public static class EnvironmentVariables
     public static string DbConnectionString { get; } = GetRequiredEnvironmentVariable("DbConnectionString");
     public static string TelegramSessionFilePath { get; } = GetRequiredEnvironmentVariable("TelegramSessionFilePath");
     public static string BrowserSessionFilePath { get; } = GetRequiredEnvironmentVariable("BrowserSessionFilePath");
+    public static string UserAgentFetchUrl { get; } = GetRequiredEnvironmentVariable("UserAgentFetchUrl");
     
     public static int TelegramApiId { get; } = int.Parse(GetRequiredEnvironmentVariable("TelegramApiId"));
     public static string TelegramPhoneNumber { get; } = GetRequiredEnvironmentVariable("TelegramPhoneNumber");

@@ -68,6 +68,7 @@ if (-not (Test-Path ".env")) {
 TelegramSessionFilePath="telegram-session"
 BrowserSessionFilePath="browser-session"
 DbConnectionString="Data Source=app.db"
+UserAgentFetchUrl="https://raw.githubusercontent.com/HyperBeats/User-Agent-List/main/useragents-desktop.txt"
 
 TelegramPhoneNumber=$TelegramPhoneNumber
 TelegramApiId=$TelegramApiId

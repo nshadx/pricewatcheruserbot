@@ -30,6 +30,7 @@ using (var host = builder.Build())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+        await dbContext.Database.EnsureDeletedAsync();
         await dbContext.Database.EnsureCreatedAsync();
     }
 

@@ -7,4 +7,5 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<WorkerItem> WorkerItems { get; set; }
     public DbSet<SentMessage> SentMessages { get; set; }
+    public DbSet<UserAgent> UserAgents { get; set; }
 }
