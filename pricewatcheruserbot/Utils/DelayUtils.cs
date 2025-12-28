@@ -1,4 +1,4 @@
-﻿namespace pricewatcheruserbot.Workers;
+﻿namespace pricewatcheruserbot.Utils;
 
 public static class DelayUtils
 {

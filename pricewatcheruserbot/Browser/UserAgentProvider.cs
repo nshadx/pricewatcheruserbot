@@ -2,7 +2,7 @@
 using pricewatcheruserbot.Services;
 using pricewatcheruserbot.Utils;
 
-namespace pricewatcheruserbot.Browser.Impl;
+namespace pricewatcheruserbot.Browser;
 
 public class UserAgentProvider(AppDbContext dbContext)
 {

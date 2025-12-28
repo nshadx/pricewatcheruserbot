@@ -1,6 +1,6 @@
 ﻿using Microsoft.Playwright;
 
-namespace pricewatcheruserbot.Browser.Patchers;
+namespace pricewatcheruserbot.Browser;
 
 public interface IPatcher
 {

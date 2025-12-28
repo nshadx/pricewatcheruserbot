@@ -4,6 +4,7 @@ using pricewatcheruserbot.Scrappers;
 using pricewatcheruserbot.Scrappers.Impl;
 using pricewatcheruserbot.Services;
 using pricewatcheruserbot.Telegram;
+using pricewatcheruserbot.Utils;
 
 namespace pricewatcheruserbot.Workers;
 
