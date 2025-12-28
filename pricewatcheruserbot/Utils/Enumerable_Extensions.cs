@@ -14,20 +14,16 @@ public static class Enumerable_Extensions
             return source;
         }
 
-        public async IAsyncEnumerable<T> Randomize(int window = 10)
+        public async IAsyncEnumerable<T> Shuffle(int window)
         {
-            var container = new bool[window];
-        
             await foreach (var chunk in source.Chunk(window))
             {
-                var max = Math.Min(chunk.Length, window);
-                int index;
-                do
+                Random.Shared.Shuffle(chunk);
+
+                foreach (var item in chunk)
                 {
-                    index = Random.Shared.Next(max);
-                } while (container[index]);
-                
-                yield return chunk[index];
+                    yield return item;
+                }
             }
         }
     }

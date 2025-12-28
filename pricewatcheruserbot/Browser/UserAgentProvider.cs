@@ -11,11 +11,11 @@ public class UserAgentProvider(AppDbContext dbContext)
     public async Task<string> GetRandomUserAgent(string browserName)
     {
         await Initialize();
-        
+
         var enumerable = dbContext.UserAgents
             .AsAsyncEnumerable()
+            .Shuffle(window: 128)
             .Where(x => x.Value.Contains(browserName) && x.Value.Contains(_osName))
-            .Randomize()
             .Select(x => x.Value);
 
         var value = await enumerable.FirstAsync();
