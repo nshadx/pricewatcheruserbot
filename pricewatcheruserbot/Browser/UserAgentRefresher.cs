@@ -10,26 +10,26 @@ public class UserAgentRefresher(
 ) : BackgroundService
 {
     private readonly SqliteCommand _insertCommand = new("""
-                                                               INSERT INTO "UserAgents" ("Value") VALUES (@value)
-                                                               """)
+                                                        INSERT INTO "UserAgents" ("Value") VALUES (@value)
+                                                        """)
     {
         Parameters = { new SqliteParameter("@value", SqliteType.Text) }
     };
 
     private readonly SqliteCommand _deduplicationCommand = new("""
-                                                                      WITH ranked AS (
-                                                                          SELECT
-                                                                              "Id",
-                                                                              ROW_NUMBER() OVER (PARTITION BY "Value" ORDER BY "Id") AS rn
-                                                                          FROM "UserAgents"
-                                                                      )
-                                                                      DELETE FROM "UserAgents"
-                                                                      WHERE "Id" IN (
-                                                                          SELECT "Id"
-                                                                          FROM ranked
-                                                                          WHERE rn > 1
-                                                                      );
-                                                                      """);
+                                                               WITH ranked AS (
+                                                                   SELECT
+                                                                       "Id",
+                                                                       ROW_NUMBER() OVER (PARTITION BY "Value" ORDER BY "Id") AS rn
+                                                                   FROM "UserAgents"
+                                                               )
+                                                               DELETE FROM "UserAgents"
+                                                               WHERE "Id" IN (
+                                                                   SELECT "Id"
+                                                                   FROM ranked
+                                                                   WHERE rn > 1
+                                                               );
+                                                               """);
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
