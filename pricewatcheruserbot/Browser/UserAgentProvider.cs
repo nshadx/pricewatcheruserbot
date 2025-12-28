@@ -15,8 +15,8 @@ public class UserAgentProvider(AppDbContext dbContext)
         var enumerable = dbContext.UserAgents
             .AsAsyncEnumerable()
             .Shuffle(window: 128)
-            .Where(x => x.Value.Contains(browserName) && x.Value.Contains(_osName))
-            .Select(x => x.Value);
+            .Select(x => x.Value)
+            .Where(x => x.Contains(browserName) && x.Contains(_osName));
 
         var value = await enumerable.FirstAsync();
         
