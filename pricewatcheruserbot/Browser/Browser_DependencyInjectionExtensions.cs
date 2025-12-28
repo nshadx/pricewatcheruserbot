@@ -12,6 +12,7 @@ public static class Browser_DependencyInjectionExtensions
         services.AddSingleton<IPatcher, WebDriverPatcher>();
         services.AddScoped<UserAgentProvider>();
         services.AddSingleton<IUserAgentFetcher, WebUserAgentFetcher>();
+        services.AddSingleton<IUserAgentFetcher, DefaultUserAgentFetcher>();
         services.AddHostedService<UserAgentRefresher>();
         
         return services;

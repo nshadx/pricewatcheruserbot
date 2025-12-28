@@ -2,7 +2,6 @@
 using Microsoft.Data.Sqlite;
 using pricewatcheruserbot.Configuration;
 using pricewatcheruserbot.Utils;
-using pricewatcheruserbot.Workers;
 
 namespace pricewatcheruserbot.Browser;
 
