@@ -9,7 +9,9 @@ public class BrowserService : IAsyncDisposable, IDisposable
     private IPlaywright? _instance;
     private IBrowser? _browser;
     private IBrowserContext? _browserContext;
-
+    private int _roundCount;
+    
+    private readonly SemaphoreSlim _semaphore;
     private readonly IReadOnlyCollection<IPatcher> _patchers;
     private readonly BrowserConfiguration _configuration;
     
@@ -20,13 +22,18 @@ public class BrowserService : IAsyncDisposable, IDisposable
     {
         _patchers = patchers.ToArray();
         _configuration = configuration.Value;
+        _semaphore = new(1);
     }
 
     public async Task SaveState()
     {
         await Initialize();
 
+        await _semaphore.WaitAsync();
+        
         await _browserContext.StorageStateAsync(new BrowserContextStorageStateOptions() { Path = _configuration.SessionFilePath });
+
+        _semaphore.Release();
     }
     
     public async Task<IPage> CreateNewPageWithinContext()
@@ -34,12 +41,14 @@ public class BrowserService : IAsyncDisposable, IDisposable
         await Initialize();
 
         var page = await _browserContext.NewPageAsync();
-
+        
         foreach (var patcher in _patchers)
         {
             await patcher.OnPageCreated(page);
         }
 
+        Interlocked.Increment(ref _roundCount);
+        
         return page;
     }
     
@@ -48,6 +57,8 @@ public class BrowserService : IAsyncDisposable, IDisposable
     [MemberNotNull(nameof(_browserContext))]
     private async Task Initialize()
     {
+        await _semaphore.WaitAsync();
+        
         _instance ??= await Playwright.CreateAsync();
 
         if (_browser is null)
@@ -64,7 +75,7 @@ public class BrowserService : IAsyncDisposable, IDisposable
             _browser = await _instance.Chromium.LaunchAsync(options);
         }
 
-        if (_browserContext is null)
+        if (_browserContext is null || _roundCount + 1 > 3)
         {
             BrowserNewContextOptions options = new();
 
@@ -77,7 +88,10 @@ public class BrowserService : IAsyncDisposable, IDisposable
             }
             
             _browserContext = await _browser.NewContextAsync(options);
+            _roundCount = 0;
         }
+
+        _semaphore.Release();
     }
     
     public void Dispose()
