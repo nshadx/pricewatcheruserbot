@@ -1,5 +1,4 @@
 ﻿using Microsoft.Playwright;
-using pricewatcheruserbot.Browser.Impl;
 
 namespace pricewatcheruserbot.Browser.Patchers;
 

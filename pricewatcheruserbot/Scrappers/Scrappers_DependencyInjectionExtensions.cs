@@ -4,14 +4,18 @@ namespace pricewatcheruserbot.Scrappers;
 
 public static class Scrappers_DependencyInjectionExtensions
 {
-    public static IServiceCollection AddScrappers(this IServiceCollection services)
+    extension(IHostApplicationBuilder builder)
     {
-        services.AddSingleton<ScrapperProvider>();
-        services.AddSingleton<ScrapperService>();
-        services.AddSingleton<ScrapperBase, OzonScrapper>();
-        services.AddSingleton<ScrapperBase, WildberriesScrapper>();
-        services.AddSingleton<ScrapperBase, YandexMarketScrapper>();
+        public IHostApplicationBuilder AddScrappers()
+        {
+            builder.Services.AddSingleton<OzonInput>();
+            builder.Services.AddSingleton<ScrapperProvider>();
+            builder.Services.AddSingleton<ScrapperService>();
+            builder.Services.AddSingleton<ScrapperBase, OzonScrapper>();
+            builder.Services.AddSingleton<ScrapperBase, WildberriesScrapper>();
+            builder.Services.AddSingleton<ScrapperBase, YandexMarketScrapper>();
 
-        return services;
+            return builder;
+        }
     }
 }

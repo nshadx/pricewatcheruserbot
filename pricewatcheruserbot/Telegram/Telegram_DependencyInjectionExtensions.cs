@@ -1,46 +1,51 @@
-﻿using pricewatcheruserbot.Configuration;
+﻿using Microsoft.Extensions.Options;
 using TL;
 
 namespace pricewatcheruserbot.Telegram;
 
 public static class Telegram_DependencyInjectionExtensions
 {
-    public static IServiceCollection AddMessageServices(this IServiceCollection services)
+    extension(IHostApplicationBuilder builder)
     {
-        services.AddSingleton<MessageSender>();
-        services.AddScoped<MessageManager>();
-
-        return services;
-    }
-    
-    public static IServiceCollection AddTelegram(this IServiceCollection services)
-    {
-        services.AddSingleton<TelegramService>();
-        services.AddSingleton<UpdateHandler>();
-        services.AddSingleton(provider =>
+        public IHostApplicationBuilder AddMessageServices()
         {
-            var logger = provider.GetRequiredService<ILogger<WTelegram.Client>>();
-            var userInputProvider = provider.GetRequiredService<IUserInputProvider>();
-            var updateHandler = provider.GetRequiredService<UpdateHandler>();
-            
-            WTelegram.Helpers.Log = (logLevel, message) =>
-            {
-#pragma warning disable CA2254
-                logger.Log((LogLevel)(logLevel - 1), message);
-#pragma warning restore CA2254
-            };
+            builder.Services.AddSingleton<MessageSender>();
+            builder.Services.AddScoped<MessageManager>();
 
-            var client = new WTelegram.Client(
-                userInputProvider.Telegram_GetApiId().Result,
-                userInputProvider.Telegram_GetApiHash().Result,
-                EnvironmentVariables.TelegramSessionFilePath
-            );
-            
-            _ = client.WithUpdateManager(updateHandler.Handle);
+            return builder;
+        }
     
-            return client;
-        });
+        public IHostApplicationBuilder AddTelegram()
+        {
+            builder.Services.AddSingleton<TelegramInput>();
+            builder.Services.Configure<TelegramConfiguration>(builder.Configuration.GetRequiredSection(nameof(TelegramConfiguration)));
+            builder.Services.AddSingleton<TelegramService>();
+            builder.Services.AddSingleton<UpdateHandler>();
+            builder.Services.AddSingleton(provider =>
+            {
+                var logger = provider.GetRequiredService<ILogger<WTelegram.Client>>();
+                var updateHandler = provider.GetRequiredService<UpdateHandler>();
+                var configuration = provider.GetRequiredService<IOptions<TelegramConfiguration>>().Value;
+            
+                WTelegram.Helpers.Log = (logLevel, message) =>
+                {
+#pragma warning disable CA2254
+                    logger.Log((LogLevel)(logLevel - 1), message);
+#pragma warning restore CA2254
+                };
 
-        return services;
+                var client = new WTelegram.Client(
+                    configuration.ApiId,
+                    configuration.ApiHash,
+                    configuration.SessionFilePath
+                );
+            
+                _ = client.WithUpdateManager(updateHandler.Handle);
+    
+                return client;
+            });
+
+            return builder;
+        }
     }
 }

@@ -1,23 +1,25 @@
-﻿using Microsoft.Playwright;
+﻿using Microsoft.Extensions.Options;
+using Microsoft.Playwright;
 using pricewatcheruserbot.Browser;
 
 namespace pricewatcheruserbot.Scrappers.Impl;
 
 public class WildberriesScrapper(
     ILogger<WildberriesScrapper> logger,
-    BrowserService browserService
-) : ScrapperBase(logger, browserService)
+    BrowserService browserService,
+    IOptions<BrowserConfiguration> configuration
+) : ScrapperBase(logger, browserService, configuration)
 {
     public override Uri Host { get; } = new("https://wildberries.ru");
     
-    protected override Task AuthorizeCore(IPage page)
+    protected override Task AuthorizeCore()
     {
         return Task.CompletedTask;
     }
 
-    protected override async Task<double> GetPriceCore(IPage page)
+    protected override async Task<double> GetPriceCore()
     {
-        PageObject pageObject = new(page);
+        PageObject pageObject = new(Page);
             
         Logger.LogInformation("Begin price selecting...");
             
@@ -25,7 +27,7 @@ public class WildberriesScrapper(
         var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
 
         Logger.LogInformation("Price was received successfully"); 
-        await page.Debug_TakeScreenshot("wildberries_price_received");
+        await TakeScreenshot("wildberries_price_received");
         
         return priceValue;
     }

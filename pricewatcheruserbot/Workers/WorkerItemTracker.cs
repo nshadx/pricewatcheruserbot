@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using pricewatcheruserbot.Entities;
 
-namespace pricewatcheruserbot.Services;
+namespace pricewatcheruserbot.Workers;
 
 public class WorkerItemTracker(IMemoryCache memoryCache)
 {

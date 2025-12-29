@@ -1,7 +1,4 @@
-﻿using Microsoft.Playwright;
-using pricewatcheruserbot.Configuration;
-
-namespace pricewatcheruserbot.Scrappers;
+﻿namespace pricewatcheruserbot.Scrappers;
 
 public static class ScrapperUtils
 {
@@ -19,12 +16,5 @@ public static class ScrapperUtils
         var value = double.Parse(onlyDigits);
 
         return value;
-    }
-
-    public static Task Debug_TakeScreenshot(this IPage page, string name)
-    {
-        var path = Path.Combine(EnvironmentVariables.StorageDirectoryPath, "screenshots", $"{name}.png");
-        
-        return page.ScreenshotAsync(new PageScreenshotOptions() { Path = path });
     }
 }

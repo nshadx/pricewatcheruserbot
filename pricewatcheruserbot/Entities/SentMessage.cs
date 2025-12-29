@@ -6,8 +6,3 @@ public class SentMessage
     public int TelegramId { get; set; }
     public MessageType Type { get; set; }
 }
-
-public enum MessageType
-{
-    LIST
-}

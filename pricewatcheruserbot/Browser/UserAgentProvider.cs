@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using pricewatcheruserbot.Services;
 using pricewatcheruserbot.Utils;
 
 namespace pricewatcheruserbot.Browser;

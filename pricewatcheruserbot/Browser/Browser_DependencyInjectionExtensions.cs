@@ -5,16 +5,20 @@ namespace pricewatcheruserbot.Browser;
 
 public static class Browser_DependencyInjectionExtensions
 {
-    public static IServiceCollection AddBrowserServices(this IServiceCollection services)
+    extension(IHostApplicationBuilder builder)
     {
-        services.AddHttpClient();
-        services.AddSingleton<BrowserService>();
-        services.AddSingleton<IPatcher, WebDriverPatcher>();
-        services.AddScoped<UserAgentProvider>();
-        services.AddSingleton<IUserAgentFetcher, WebUserAgentFetcher>();
-        services.AddSingleton<IUserAgentFetcher, DefaultUserAgentFetcher>();
-        services.AddHostedService<UserAgentRefresher>();
-        
-        return services;
+        public IHostApplicationBuilder AddBrowserServices()
+        {
+            builder.Services.Configure<BrowserConfiguration>(builder.Configuration.GetRequiredSection(nameof(BrowserConfiguration)));
+            builder.Services.Configure<UserAgentConfiguration>(builder.Configuration.GetRequiredSection(nameof(UserAgentConfiguration)));
+            builder.Services.AddHttpClient();
+            builder.Services.AddSingleton<BrowserService>();
+            builder.Services.AddSingleton<IPatcher, WebDriverPatcher>();
+            builder.Services.AddScoped<UserAgentProvider>();
+            builder.Services.AddSingleton<IUserAgentFetcher, WebUserAgentFetcher>();
+            builder.Services.AddHostedService<UserAgentRefresher>();
+
+            return builder;
+        }
     }
 }

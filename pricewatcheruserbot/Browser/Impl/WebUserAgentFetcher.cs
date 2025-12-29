@@ -1,22 +1,28 @@
-﻿using pricewatcheruserbot.Configuration;
+﻿using Microsoft.Extensions.Options;
 
 namespace pricewatcheruserbot.Browser.Impl;
 
-public class WebUserAgentFetcher(HttpClient httpClient) : IUserAgentFetcher
+public class WebUserAgentFetcher(
+    HttpClient httpClient,
+    IOptions<UserAgentConfiguration> configuration
+) : IUserAgentFetcher
 {
     public async IAsyncEnumerable<string> Enumerate()
     {
-        var response = await httpClient.GetStreamAsync(EnvironmentVariables.UserAgentFetchUrl);
-
-        using (var streamReader = new StreamReader(response))
+        foreach (var url in configuration.Value.FetchUrls)
         {
-            while (streamReader.Peek() >= 0)
-            {
-                var line = await streamReader.ReadLineAsync();
+            var response = await httpClient.GetStreamAsync(url);
 
-                if (!string.IsNullOrEmpty(line))
+            using (var streamReader = new StreamReader(response))
+            {
+                while (streamReader.Peek() >= 0)
                 {
-                    yield return line;
+                    var line = await streamReader.ReadLineAsync();
+
+                    if (!string.IsNullOrEmpty(line))
+                    {
+                        yield return line;
+                    }
                 }
             }
         }

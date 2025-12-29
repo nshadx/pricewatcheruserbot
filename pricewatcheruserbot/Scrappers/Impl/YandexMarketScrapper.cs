@@ -1,30 +1,32 @@
-﻿using Microsoft.Playwright;
+﻿using Microsoft.Extensions.Options;
+using Microsoft.Playwright;
 using pricewatcheruserbot.Browser;
 
 namespace pricewatcheruserbot.Scrappers.Impl;
 
 public class YandexMarketScrapper(
     ILogger<YandexMarketScrapper> logger,
-    BrowserService browserService
-) : ScrapperBase(logger, browserService)
+    BrowserService browserService,
+    IOptions<BrowserConfiguration> configuration
+) : ScrapperBase(logger, browserService, configuration)
 {
     public override Uri Host { get; } = new("https://market.yandex.ru");
     
-    protected override Task AuthorizeCore(IPage page)
+    protected override Task AuthorizeCore()
     {
         return Task.CompletedTask;
     }
 
-    protected override async Task<double> GetPriceCore(IPage page)
+    protected override async Task<double> GetPriceCore()
     {
-        PageObject pageObject = new(page);
+        PageObject pageObject = new(Page);
 
         Logger.LogInformation("Trying to close login box...");
             
         await pageObject.CloseLoginBox();
             
         Logger.LogInformation("Login box closed");
-        await page.Debug_TakeScreenshot("yandex_market_login_box_closed");
+        await TakeScreenshot("yandex_market_login_box_closed");
             
         Logger.LogInformation("Begin price selecting...");
             
@@ -32,7 +34,7 @@ public class YandexMarketScrapper(
         var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
         
         Logger.LogInformation("Price was received successfully"); 
-        await page.Debug_TakeScreenshot("yandex_market_price_received");
+        await TakeScreenshot("yandex_market_price_received");
 
         return priceValue;
     }
@@ -58,6 +60,7 @@ public class YandexMarketScrapper(
                 }
             }
         }
+        
         public async Task<string?> GetPrice()
         {
             var locator = page

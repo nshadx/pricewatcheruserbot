@@ -1,12 +1,12 @@
 ﻿using System.Threading.Channels;
 using Microsoft.Data.Sqlite;
-using pricewatcheruserbot.Configuration;
 using pricewatcheruserbot.Utils;
 
 namespace pricewatcheruserbot.Browser;
 
 public class UserAgentRefresher(
-    IEnumerable<IUserAgentFetcher> fetchers
+    IEnumerable<IUserAgentFetcher> fetchers,
+    IConfiguration configuration
 ) : BackgroundService
 {
     private readonly SqliteCommand _insertCommand = new("""
@@ -62,7 +62,8 @@ public class UserAgentRefresher(
 
     private async Task ConsumerTask(ChannelReader<string> channel, CancellationToken stoppingToken)
     {
-        using (var connection = new SqliteConnection(EnvironmentVariables.DbConnectionString))
+        var dbConnectionString = configuration.GetConnectionString("DbConnection");
+        using (var connection = new SqliteConnection(dbConnectionString))
         {
             connection.Open();
 

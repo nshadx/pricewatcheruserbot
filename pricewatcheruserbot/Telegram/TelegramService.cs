@@ -1,20 +1,18 @@
-﻿using pricewatcheruserbot.Configuration;
-
-namespace pricewatcheruserbot.Telegram;
+﻿namespace pricewatcheruserbot.Telegram;
 
 public class TelegramService(
     ILogger<TelegramService> logger,
-    IUserInputProvider userInputProvider,
     UpdateHandler updateHandler,
-    WTelegram.Client client
+    WTelegram.Client client,
+    TelegramInput input
 )
 {
     public async Task Authorize()
     {
         logger.LogInformation("Telegram login started...");
-        
-        var telegramPhoneNumber = await userInputProvider.Telegram_GetPhoneNumber();
-        await DoLogin(telegramPhoneNumber);
+
+        var phoneNumber = await input.GetPhoneNumber();
+        await DoLogin(phoneNumber);
 
         logger.LogInformation("Telegram login completed successfully");
         logger.LogInformation("Telegram receiver started");
@@ -26,8 +24,8 @@ public class TelegramService(
         {
             loginInfo = await client.Login(loginInfo) switch
             {
-                "password" => await userInputProvider.Telegram_GetPassword(),
-                "verification_code" => await userInputProvider.Telegram_GetVerificationCode(),
+                "password" => await input.GetPassword(),
+                "verification_code" => await input.GetPhoneVerificationCode(),
                 _ => null!
             };
         }

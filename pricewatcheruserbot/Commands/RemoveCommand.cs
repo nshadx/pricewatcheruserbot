@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using pricewatcheruserbot.Services;
 using pricewatcheruserbot.Telegram;
+using pricewatcheruserbot.Workers;
 using TL;
 
 namespace pricewatcheruserbot.Commands;

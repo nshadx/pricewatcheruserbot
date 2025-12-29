@@ -1,52 +1,53 @@
-﻿using Microsoft.Playwright;
+﻿using Microsoft.Extensions.Options;
+using Microsoft.Playwright;
 using pricewatcheruserbot.Browser;
-using pricewatcheruserbot.Configuration;
 
 namespace pricewatcheruserbot.Scrappers.Impl;
 
 public class OzonScrapper(
-    IUserInputProvider userInputProvider,
     ILogger<OzonScrapper> logger,
-    BrowserService browserService
-) : ScrapperBase(logger, browserService)
+    BrowserService browserService,
+    IOptions<BrowserConfiguration> configuration,
+    OzonInput input
+) : ScrapperBase(logger, browserService, configuration)
 {
     public override Uri Host { get; } = new("https://ozon.ru");
     
-    protected override async Task AuthorizeCore(IPage page)
+    protected override async Task AuthorizeCore()
     {
-        PageObject pageObject = new(page);
+        PageObject pageObject = new(Page);
 
             Logger.LogInformation("Check for login requirement...");
 
             var requiresLogin = await pageObject.RequiresLogin();
             
             Logger.LogInformation("Login requirement check completed");
-            await page.Debug_TakeScreenshot("ozon_login_requirement_check");
+            await TakeScreenshot("ozon_login_requirement_check");
             
             if (requiresLogin)
             {
                 Logger.LogInformation("Begin login...");
-                await page.Debug_TakeScreenshot("ozon_begin_login");
+                await TakeScreenshot("ozon_begin_login");
                 
                 await pageObject.OpenLoginForm();
 
                 Logger.LogInformation("Login form opened");
-                await page.Debug_TakeScreenshot("ozon_login_form_opened");
+                await TakeScreenshot("ozon_login_form_opened");
                 
                 Logger.LogInformation("Phone number requested");
 
-                var phoneNumber = await userInputProvider.Ozon_GetPhoneNumber();
+                var phoneNumber = await input.GetPhoneNumber();
                 await pageObject.EnterPhoneNumber(phoneNumber);
                 
                 Logger.LogInformation("Phone number entered");
-                await page.Debug_TakeScreenshot("ozon_phone_number_entered");
+                await TakeScreenshot("ozon_phone_number_entered");
                 
                 Logger.LogInformation("Submitting form...");
                 
                 await pageObject.LoginSubmit();
                 
                 Logger.LogInformation("Form submitted");
-                await  page.Debug_TakeScreenshot("ozon_form_submitted");
+                await  TakeScreenshot("ozon_form_submitted");
                 
                 var isPhoneInvalid = await pageObject.IsPhoneNumberInvalid();
                 if (isPhoneInvalid)
@@ -60,15 +61,15 @@ public class OzonScrapper(
                 await pageObject.SelectAnotherLoginWay();
                 
                 Logger.LogInformation("Code via phone authentication way selected");
-                await page.Debug_TakeScreenshot("ozon_authentication_via_phone");
+                await TakeScreenshot("ozon_authentication_via_phone");
 
                 Logger.LogInformation("Phone verification code requested");
                 
-                var code = await userInputProvider.Ozon_GetPhoneVerificationCode();
-                await pageObject.EnterCode(code);
+                var phoneVerificationCode = await input.GetPhoneVerificationCode();
+                await pageObject.EnterPhoneVerificationCode(phoneVerificationCode);
                 
                 Logger.LogInformation("Phone verification code entered");
-                await page.Debug_TakeScreenshot("ozon_phone_verification_code_entered");
+                await TakeScreenshot("ozon_phone_verification_code_entered");
 
                 Logger.LogInformation("Check for email verification requirement...");
                 
@@ -79,21 +80,21 @@ public class OzonScrapper(
                     
                     Logger.LogInformation("Email verification requested");
                     
-                    var emailCode = await userInputProvider.Ozon_GetEmailVerificationCode();
-                    await pageObject.EnterCode(emailCode);
+                    var emailVerificationCode = await input.GetEmailVerificationCode();
+                    await pageObject.EnterEmailVerificationCode(emailVerificationCode);
                     
                     Logger.LogInformation("Email verification code entered");
-                    await page.Debug_TakeScreenshot("ozon_email_verification_code_entered");
+                    await TakeScreenshot("ozon_email_verification_code_entered");
                 }
                 
                 Logger.LogInformation("Successful authorization");
-                await page.Debug_TakeScreenshot("ozon_successful_authorization");
+                await TakeScreenshot("ozon_successful_authorization");
             }
     }
 
-    protected override async Task<double> GetPriceCore(IPage page)
+    protected override async Task<double> GetPriceCore()
     {
-        PageObject pageObject = new(page);
+        PageObject pageObject = new(Page);
             
         Logger.LogInformation("Begin price selecting...");
             
@@ -101,7 +102,7 @@ public class OzonScrapper(
         var priceValue = ScrapperUtils.GetPriceValueWithoutCurrency(priceString);
         
         Logger.LogInformation("Price was received successfully"); 
-        await page.Debug_TakeScreenshot("ozon_price_received");
+        await TakeScreenshot("ozon_price_received");
             
         return priceValue;
     }
@@ -126,11 +127,20 @@ public class OzonScrapper(
             await locator.ClickAsync();
         }
         
-        public async Task EnterCode(string code)
+        public async Task EnterPhoneVerificationCode(string code)
         {
             var locator = page
                 .FrameLocator("#authFrame")
                 .Locator("//div[contains(@data-widget, 'loginOrRegistration')]/descendant::input[@type='number']").First;
+
+            await locator.FillAsync(code);
+        }
+        
+        public async Task EnterEmailVerificationCode(string code)
+        {
+            var locator = page
+                .FrameLocator("#authFrame")
+                .Locator("//div[contains(@data-widget, 'loginOrRegistration')]/descendant::input").First;
 
             await locator.FillAsync(code);
         }

@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
-using pricewatcheruserbot.Browser.Patchers;
-using pricewatcheruserbot.Configuration;
 
 namespace pricewatcheruserbot.Browser;
 
@@ -12,17 +11,22 @@ public class BrowserService : IAsyncDisposable, IDisposable
     private IBrowserContext? _browserContext;
 
     private readonly IReadOnlyCollection<IPatcher> _patchers;
+    private readonly BrowserConfiguration _configuration;
     
-    public BrowserService(IEnumerable<IPatcher> patchers)
+    public BrowserService(
+        IEnumerable<IPatcher> patchers,
+        IOptions<BrowserConfiguration> configuration
+    )
     {
         _patchers = patchers.ToArray();
+        _configuration = configuration.Value;
     }
 
     public async Task SaveState()
     {
         await Initialize();
-        
-        await _browserContext.StorageStateAsync(new BrowserContextStorageStateOptions() { Path = EnvironmentVariables.BrowserSessionFilePath });
+
+        await _browserContext.StorageStateAsync(new BrowserContextStorageStateOptions() { Path = _configuration.SessionFilePath });
     }
     
     public async Task<IPage> CreateNewPageWithinContext()
@@ -63,14 +67,9 @@ public class BrowserService : IAsyncDisposable, IDisposable
         if (_browserContext is null)
         {
             BrowserNewContextOptions options = new();
-            
-            string? storageStatePath = null;
-            if (File.Exists(EnvironmentVariables.BrowserSessionFilePath))
-            {
-                storageStatePath = EnvironmentVariables.BrowserSessionFilePath;
-            }
-            
-            options.StorageStatePath = storageStatePath;
+
+            if (File.Exists(_configuration.SessionFilePath))
+                options.StorageStatePath = _configuration.SessionFilePath;
 
             foreach (var patcher in _patchers)
             {

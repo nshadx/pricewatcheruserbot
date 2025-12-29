@@ -57,24 +57,29 @@ if (-not (Test-Path ".env")) {
 
     Write-Host ".env not found" -ForegroundColor Yellow
 
-    $TelegramPhoneNumber = Read-Host "Enter telegram phone number (with contry code e.g. +7)"
     $TelegramApiId       = Read-Host "Enter telegram api_id"
     $TelegramApiHash     = Read-Host "Enter telegram api_hash"
-    $TelegramPassword    = Read-Host "Enter telegram account password"
     
-    $OzonPhoneNumber     = Read-Host "Enter Ozon phone number (without contry code)"
-
-    @"
-TelegramSessionFilePath="telegram-session"
-BrowserSessionFilePath="browser-session"
-DbConnectionString="Data Source=app.db"
-UserAgentFetchUrl="https://raw.githubusercontent.com/HyperBeats/User-Agent-List/main/useragents-desktop.txt"
-
-TelegramPhoneNumber=$TelegramPhoneNumber
-TelegramApiId=$TelegramApiId
-TelegramApiHash=$TelegramApiHash
-TelegramPassword=$TelegramPassword
-OzonPhoneNumber=$OzonPhoneNumber
+@"
+{
+  "ConnectionStrings": {
+    "DbConnection": "Data Source=app.db"
+  },
+  "TelegramConfiguration": {
+    "ApiId": $TelegramApiId,
+    "ApiHash": $TelegramApiHash,
+    "SessionFilePath": "telegram-session"
+  },
+  "BrowserConfiguration": {
+    "ScreenshotsDirectory": "screenshots",
+    "SessionFilePath": "browser-session"
+  },
+  "UserAgentConfiguration": {
+    "FetchUrls": [
+      "https://raw.githubusercontent.com/HyperBeats/User-Agent-List/main/useragents-desktop.txt"
+    ]
+  }
+}
 "@ | Out-File ".env" -Encoding UTF8 -Force
 
     Write-Host ".env created" -ForegroundColor Green

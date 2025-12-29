@@ -5,30 +5,36 @@ namespace pricewatcheruserbot.Workers;
 
 public static class Workers_DependencyInjectionExtensions
 {
-    public static IServiceCollection AddWorkers(this IServiceCollection services)
+    extension(IHostApplicationBuilder builder)
     {
-        var channel = Channel.CreateBounded<WorkerItem>(
-            new BoundedChannelOptions(32)
-            {
-                SingleReader = true,
-                SingleWriter = true,
-                AllowSynchronousContinuations = false,
-                FullMode = BoundedChannelFullMode.Wait
-            });
-        
-        services.AddSingleton<ChannelReader<WorkerItem>>(channel);
-        services.AddSingleton<ChannelWriter<WorkerItem>>(resolver =>
+        public IHostApplicationBuilder AddWorkers()
         {
-            var hostLifetime = resolver.GetRequiredService<IHostApplicationLifetime>();
+            builder.Services.AddMemoryCache();
+            builder.Services.AddSingleton<WorkerItemTracker>();
+            
+            var channel = Channel.CreateBounded<WorkerItem>(
+                new BoundedChannelOptions(32)
+                {
+                    SingleReader = true,
+                    SingleWriter = true,
+                    AllowSynchronousContinuations = false,
+                    FullMode = BoundedChannelFullMode.Wait
+                });
+        
+            builder.Services.AddSingleton<ChannelReader<WorkerItem>>(channel);
+            builder.Services.AddSingleton<ChannelWriter<WorkerItem>>(resolver =>
+            {
+                var hostLifetime = resolver.GetRequiredService<IHostApplicationLifetime>();
     
-            hostLifetime.ApplicationStopping.Register(() => { channel.Writer.Complete(); });
+                hostLifetime.ApplicationStopping.Register(() => { channel.Writer.Complete(); });
     
-            return channel;
-        });
+                return channel;
+            });
 
-        services.AddHostedService<ProducerWorker>();
-        services.AddHostedService<ConsumerWorker>();
+            builder.Services.AddHostedService<ProducerWorker>();
+            builder.Services.AddHostedService<ConsumerWorker>();
 
-        return services;
+            return builder;
+        }
     }
 }
