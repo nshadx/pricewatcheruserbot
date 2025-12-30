@@ -31,7 +31,6 @@ if (-not (Test-Path $repoName)) {
     Set-Location $repoName
     git pull --rebase
     if ($LASTEXITCODE -ne 0) { exit 1 }
-    Set-Location ..
 }
 
 # ================= BUILD =====================
