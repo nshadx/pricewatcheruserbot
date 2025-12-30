@@ -15,7 +15,7 @@ public class WorkerItemTracker(IMemoryCache memoryCache)
             if (sma is not null && sma.TryGetLatestValue(out var value))
             {
                 isPriceDecreased = currentPrice < value;
-                difference = value - currentPrice;
+                difference = sma.Previous - currentPrice;
             }
         }
         
