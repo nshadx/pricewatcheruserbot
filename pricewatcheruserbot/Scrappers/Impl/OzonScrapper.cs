@@ -196,6 +196,7 @@ public class OzonScrapper(
         {
             var locator = page.Locator("//div[contains(@data-widget, 'profileMenuAnonymous')]").First;
 
+            // i removed 'networkidle' awaiter before, it causes an issue for Ozon: we should await latest .js script that enables login button 
             await page.WaitForRequestFinishedAsync(new PageWaitForRequestFinishedOptions() { Predicate = request => request.Url.Contains("vendor-workbox") });
             await locator.WaitForAsync();
 
