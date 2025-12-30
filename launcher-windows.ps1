@@ -53,9 +53,9 @@ if ($LASTEXITCODE -ne 0) {
 Set-Location "publish"
 
 # ================= .ENV ======================
-if (-not (Test-Path ".env")) {
+if (-not (Test-Path "appsettings.json")) {
 
-    Write-Host ".env not found" -ForegroundColor Yellow
+    Write-Host "appsettings.json not found" -ForegroundColor Yellow
 
     $TelegramApiId       = Read-Host "Enter telegram api_id"
     $TelegramApiHash     = Read-Host "Enter telegram api_hash"
@@ -67,7 +67,7 @@ if (-not (Test-Path ".env")) {
   },
   "TelegramConfiguration": {
     "ApiId": $TelegramApiId,
-    "ApiHash": $TelegramApiHash,
+    "ApiHash": "$TelegramApiHash",
     "SessionFilePath": "telegram-session"
   },
   "BrowserConfiguration": {
