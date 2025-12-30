@@ -28,8 +28,11 @@ using (var host = builder.Build())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        await dbContext.Database.EnsureDeletedAsync();
-        await dbContext.Database.EnsureCreatedAsync();
+        var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
+        if (pendingMigrations.Any())
+        {
+            await dbContext.Database.MigrateAsync();
+        }
     }
     
     var telegramService = host.Services.GetRequiredService<TelegramService>();
