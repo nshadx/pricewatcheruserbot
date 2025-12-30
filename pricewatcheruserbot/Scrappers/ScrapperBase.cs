@@ -23,7 +23,7 @@ public abstract class ScrapperBase
         
         Logger.LogInformation("Page init...");
         
-        await Page.GotoAsync(Host.ToString(), new PageGotoOptions() { WaitUntil = WaitUntilState.NetworkIdle });
+        await Page.GotoAsync(Host.ToString());
         
         Logger.LogInformation("Page loaded");
         await TakeScreenshot("authorization_page_loaded");
