@@ -116,8 +116,6 @@ public class YandexMarketScrapper(
         public async Task<IReadOnlyCollection<string>> GetSuggestedAccounts()
         {
             var locator = page.Locator("//div[contains(@class, 'Suggest-account-list')]/descendant::div[contains(@class, 'UserLogin-info')]");
-
-            await locator.WaitForAsync();
             
             return await locator.AllInnerTextsAsync();
         }
