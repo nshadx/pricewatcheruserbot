@@ -80,12 +80,12 @@ if (-not (Test-Path ".env")) {
     ]
   }
 }
-"@ | Out-File ".env" -Encoding UTF8 -Force
+"@ | Out-File "appsettings.json" -Encoding UTF8 -Force
 
-    Write-Host ".env created" -ForegroundColor Green
+    Write-Host "appsettings.json created" -ForegroundColor Green
 }
 else {
-    Write-Host ".env already exists, skipping..." -ForegroundColor Green
+    Write-Host "appsettings.json already exists, skipping..." -ForegroundColor Green
 }
 
 # ================= PLAYWRIGHT ================
@@ -101,11 +101,9 @@ pwsh $playwright.FullName install
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 # ================= RUN =======================
-$exe = Get-ChildItem -Recurse -Filter "$projectName.exe" | Select-Object -First 1
+$exe = Get-ChildItem -Recurse -Filter "$projectName.dll" | Select-Object -First 1
 
 Write-Host "Starting (interactive)..." -ForegroundColor Green
-Start-Process `
-    -FilePath $exe.FullName`
-    -WorkingDirectory (Get-Location) `
-    -NoNewWindow `
-    -Wait
+
+dotnet $exe.FullName
+if ($LASTEXITCODE -ne 0) { exit 1 }
