@@ -31,6 +31,7 @@ public abstract class ScrapperBase
         try
         {
             await AuthorizeCore();
+            await TakeScreenshot("authorization_successful");
             await BrowserService.SaveState();
         }
         finally

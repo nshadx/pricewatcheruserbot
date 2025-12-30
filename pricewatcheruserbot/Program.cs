@@ -7,6 +7,9 @@ using pricewatcheruserbot.Telegram;
 using pricewatcheruserbot.UserInput;
 using pricewatcheruserbot.Workers;
 
+Console.InputEncoding = System.Text.Encoding.UTF8;
+Console.OutputEncoding = System.Text.Encoding.UTF8;
+
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddDbContext<AppDbContext>(x =>

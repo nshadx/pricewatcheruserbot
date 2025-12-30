@@ -5,6 +5,7 @@ using pricewatcheruserbot.Browser;
 namespace pricewatcheruserbot.Scrappers.Impl;
 
 public class YandexMarketScrapper(
+    YandexInput input,
     ILogger<YandexMarketScrapper> logger,
     BrowserService browserService,
     IOptions<BrowserConfiguration> configuration
@@ -12,9 +13,55 @@ public class YandexMarketScrapper(
 {
     public override Uri BaseUrl { get; } = new("https://market.yandex.ru");
     
-    protected override Task AuthorizeCore()
+    protected override async Task AuthorizeCore()
     {
-        return Task.CompletedTask;
+        PageObject pageObject = new(Page);
+        
+        Logger.LogInformation("Check for login requirement...");
+
+        var requiresLogin = await pageObject.RequiresLogin();
+
+        Logger.LogInformation("Login requirement check completed");
+        await TakeScreenshot("yandex_market_login_requirement_check");
+
+        if (requiresLogin)
+        {
+            Logger.LogInformation("Begin login...");
+            await TakeScreenshot("yandex_market_begin_login");
+
+            await pageObject.OpenLoginForm();
+
+            Logger.LogInformation("Login form opened");
+            await TakeScreenshot("yandex_market_login_form_opened");
+
+            Logger.LogInformation("Phone number requested");
+
+            var phoneNumber = await input.GetPhoneNumber();
+            await pageObject.EnterPhoneNumber(phoneNumber);
+
+            Logger.LogInformation("Phone number entered");
+            await TakeScreenshot("yandex_market_phone_number_entered");
+
+            Logger.LogInformation("Submitting form...");
+
+            await pageObject.LoginSubmit();
+
+            Logger.LogInformation("Form submitted");
+            await TakeScreenshot("yandex_market_form_submitted");
+            
+            Logger.LogInformation("Phone verification code requested");
+
+            var phoneVerificationCode = await input.GetPhoneVerificationCode();
+            await pageObject.EnterPhoneVerificationCode(phoneVerificationCode);
+
+            Logger.LogInformation("Phone verification code entered");
+            await TakeScreenshot("yandex_market_phone_verification_code_entered");
+            
+            var suggestedAccounts = await pageObject.GetSuggestedAccounts();
+            var account = await input.GetAccount(suggestedAccounts);
+
+            await pageObject.SelectAccount(account);
+        }
     }
 
     protected override async Task<double> GetPriceCore()
@@ -41,6 +88,68 @@ public class YandexMarketScrapper(
 
     private class PageObject(IPage page)
     {
+        public async Task SelectAccount(string account)
+        {
+            var locator = page.Locator($"//div[contains(@class, 'Suggest-account-list')]/descendant::div[contains(., '{account}')]/div[contains(@data-react-aria-pressable, 'true')]");
+
+            await locator.ClickAsync();
+        }
+        
+        public async Task<IReadOnlyCollection<string>> GetSuggestedAccounts()
+        {
+            var locator = page.Locator("//div[contains(@class, 'Suggest-account-list')]/descendant::div[contains(@class, 'UserLogin-info')]");
+
+            return await locator.AllInnerTextsAsync();
+        }
+        
+        public async Task EnterPhoneVerificationCode(string code)
+        {
+            var locator = page
+                .Locator("//div[contains(@class, 'body-auth')]/descendant::input[contains(@inputmode, 'numeric')]");
+            var inputs = await locator.AllAsync();
+
+            for (var i = 0; i < inputs.Count && i < code.Length; i++)
+            {
+                var input = inputs[i];
+                var codeSymbol = code[i].ToString();
+                
+                await input.FillAsync(codeSymbol);
+            }
+        }
+        
+        public async Task LoginSubmit()
+        {
+            var locator = page
+                .Locator("//form/descendant::button/descendant::span[contains(text(), 'Log in')]/..")
+                .Or(page.Locator("//form/descendant::button/descendant::span[contains(text(), 'Войти')]/..")).First;
+            
+            await locator.ClickAsync();
+        }
+        
+        public async Task EnterPhoneNumber(string phoneNumber)
+        {
+            var locator = page
+                .Locator("//form/descendant::input[contains(@type, 'tel')]").First;
+            
+            await locator.FillAsync(phoneNumber);
+        }
+        
+        public async Task OpenLoginForm()
+        {
+            var locator = page
+                .Locator("//div[contains(@id, 'USER_MENU_ANCHOR')]/descendant::a[contains(text(), 'Войти')]");
+
+            await locator.ClickAsync();
+        }
+        
+        public async Task<bool> RequiresLogin()
+        {
+            var locator = page
+                .Locator("//div[contains(@id, 'USER_MENU_ANCHOR')]/descendant::a[contains(text(), 'Войти')]");
+
+            return await locator.IsVisibleAsync();
+        }
+        
         public async Task CloseLoginBox()
         {
             var locator = page
