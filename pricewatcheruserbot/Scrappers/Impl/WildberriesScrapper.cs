@@ -5,6 +5,7 @@ using pricewatcheruserbot.Browser;
 namespace pricewatcheruserbot.Scrappers.Impl;
 
 public class WildberriesScrapper(
+    WildberriesInput input,
     ILogger<WildberriesScrapper> logger,
     BrowserService browserService,
     IOptions<BrowserConfiguration> configuration
@@ -12,9 +13,50 @@ public class WildberriesScrapper(
 {
     public override Uri Host { get; } = new("https://wildberries.ru");
     
-    protected override Task AuthorizeCore()
+    protected override async Task AuthorizeCore()
     {
-        return Task.CompletedTask;
+        PageObject pageObject = new(Page);
+        
+        Logger.LogInformation("Check for login requirement...");
+
+        var requiresLogin = await pageObject.RequiresLogin();
+
+        Logger.LogInformation("Login requirement check completed");
+        await TakeScreenshot("wildberries_login_requirement_check");
+
+        if (requiresLogin)
+        {
+            Logger.LogInformation("Begin login...");
+            await TakeScreenshot("wildberries_begin_login");
+
+            await pageObject.OpenLoginForm();
+
+            Logger.LogInformation("Login form opened");
+            await TakeScreenshot("wildberries_login_form_opened");
+
+            Logger.LogInformation("Phone number requested");
+
+            var phoneNumber = await input.GetPhoneNumber();
+            await pageObject.EnterPhoneNumber(phoneNumber);
+
+            Logger.LogInformation("Phone number entered");
+            await TakeScreenshot("wildberries_phone_number_entered");
+
+            Logger.LogInformation("Submitting form...");
+
+            await pageObject.LoginSubmit();
+
+            Logger.LogInformation("Form submitted");
+            await TakeScreenshot("wildberries_form_submitted");
+            
+            Logger.LogInformation("Phone verification code requested");
+
+            var phoneVerificationCode = await input.GetPhoneVerificationCode();
+            await pageObject.EnterPhoneVerificationCode(phoneVerificationCode);
+
+            Logger.LogInformation("Phone verification code entered");
+            await TakeScreenshot("wildberries_phone_verification_code_entered");
+        }
     }
 
     protected override async Task<double> GetPriceCore()
@@ -34,6 +76,46 @@ public class WildberriesScrapper(
 
     private class PageObject(IPage page)
     {
+        public async Task EnterPhoneVerificationCode(string code)
+        {
+            var locator = page
+                .Locator("//form[contains(@id, 'spaAuthForm')]/descendant::input[contains(@inputmode, 'numeric')]").First;
+
+            await locator.FillAsync(code);
+        }
+        
+        public async Task LoginSubmit()
+        {
+            var locator = page
+                .Locator("//form[contains(@id, 'spaAuthForm')]/descendant::button[contains(@id, 'requestCode')]").First;
+            
+            await locator.ClickAsync();
+        }
+        
+        public async Task EnterPhoneNumber(string phoneNumber)
+        {
+            var locator = page
+                .Locator("//form[contains(@id, 'spaAuthForm')]/descendant::input[contains(@inputmode, 'tel')]").First;
+            
+            await locator.FillAsync(phoneNumber);
+        }
+        
+        public async Task OpenLoginForm()
+        {
+            var locator = page
+                .Locator("//a[contains(@data-wba-header-name, 'Login')]/descendant::p[contains(text(), 'Войти')]/..");
+
+            await locator.ClickAsync();
+        }
+        
+        public async Task<bool> RequiresLogin()
+        {
+            var locator = page
+                .Locator("//a[contains(@data-wba-header-name, 'Login')]/descendant::p[contains(text(), 'Войти')]");
+
+            return await locator.IsVisibleAsync();
+        }
+        
         public async Task<string?> GetPrice()
         {
             var locator = page

@@ -12,84 +12,84 @@ public class OzonScrapper(
 ) : ScrapperBase(logger, browserService, configuration)
 {
     public override Uri Host { get; } = new("https://ozon.ru");
-    
+
     protected override async Task AuthorizeCore()
     {
         PageObject pageObject = new(Page);
 
-            Logger.LogInformation("Check for login requirement...");
+        Logger.LogInformation("Check for login requirement...");
 
-            var requiresLogin = await pageObject.RequiresLogin();
-            
-            Logger.LogInformation("Login requirement check completed");
-            await TakeScreenshot("ozon_login_requirement_check");
-            
-            if (requiresLogin)
+        var requiresLogin = await pageObject.RequiresLogin();
+
+        Logger.LogInformation("Login requirement check completed");
+        await TakeScreenshot("ozon_login_requirement_check");
+
+        if (requiresLogin)
+        {
+            Logger.LogInformation("Begin login...");
+            await TakeScreenshot("ozon_begin_login");
+
+            await pageObject.OpenLoginForm();
+
+            Logger.LogInformation("Login form opened");
+            await TakeScreenshot("ozon_login_form_opened");
+
+            Logger.LogInformation("Phone number requested");
+
+            var phoneNumber = await input.GetPhoneNumber();
+            await pageObject.EnterPhoneNumber(phoneNumber);
+
+            Logger.LogInformation("Phone number entered");
+            await TakeScreenshot("ozon_phone_number_entered");
+
+            Logger.LogInformation("Submitting form...");
+
+            await pageObject.LoginSubmit();
+
+            Logger.LogInformation("Form submitted");
+            await TakeScreenshot("ozon_form_submitted");
+
+            var isPhoneInvalid = await pageObject.IsPhoneNumberInvalid();
+            if (isPhoneInvalid)
             {
-                Logger.LogInformation("Begin login...");
-                await TakeScreenshot("ozon_begin_login");
-                
-                await pageObject.OpenLoginForm();
-
-                Logger.LogInformation("Login form opened");
-                await TakeScreenshot("ozon_login_form_opened");
-                
-                Logger.LogInformation("Phone number requested");
-
-                var phoneNumber = await input.GetPhoneNumber();
-                await pageObject.EnterPhoneNumber(phoneNumber);
-                
-                Logger.LogInformation("Phone number entered");
-                await TakeScreenshot("ozon_phone_number_entered");
-                
-                Logger.LogInformation("Submitting form...");
-                
-                await pageObject.LoginSubmit();
-                
-                Logger.LogInformation("Form submitted");
-                await  TakeScreenshot("ozon_form_submitted");
-                
-                var isPhoneInvalid = await pageObject.IsPhoneNumberInvalid();
-                if (isPhoneInvalid)
-                {
-                    Logger.LogError("Invalid phone number entered");
-                    return;
-                }
-                
-                Logger.LogInformation("Select code via phone authentication way...");
-                
-                await pageObject.SelectAnotherLoginWay();
-                
-                Logger.LogInformation("Code via phone authentication way selected");
-                await TakeScreenshot("ozon_authentication_via_phone");
-
-                Logger.LogInformation("Phone verification code requested");
-                
-                var phoneVerificationCode = await input.GetPhoneVerificationCode();
-                await pageObject.EnterPhoneVerificationCode(phoneVerificationCode);
-                
-                Logger.LogInformation("Phone verification code entered");
-                await TakeScreenshot("ozon_phone_verification_code_entered");
-
-                Logger.LogInformation("Check for email verification requirement...");
-                
-                var requiresEmail = await pageObject.IsEmailVerificationRequired();
-                if (requiresEmail)
-                {
-                    await pageObject.SelectEmailVerification();
-                    
-                    Logger.LogInformation("Email verification requested");
-                    
-                    var emailVerificationCode = await input.GetEmailVerificationCode();
-                    await pageObject.EnterEmailVerificationCode(emailVerificationCode);
-                    
-                    Logger.LogInformation("Email verification code entered");
-                    await TakeScreenshot("ozon_email_verification_code_entered");
-                }
-                
-                Logger.LogInformation("Successful authorization");
-                await TakeScreenshot("ozon_successful_authorization");
+                Logger.LogError("Invalid phone number entered");
+                return;
             }
+
+            Logger.LogInformation("Select code via phone authentication way...");
+
+            await pageObject.SelectAnotherLoginWay();
+
+            Logger.LogInformation("Code via phone authentication way selected");
+            await TakeScreenshot("ozon_authentication_via_phone");
+
+            Logger.LogInformation("Phone verification code requested");
+
+            var phoneVerificationCode = await input.GetPhoneVerificationCode();
+            await pageObject.EnterPhoneVerificationCode(phoneVerificationCode);
+
+            Logger.LogInformation("Phone verification code entered");
+            await TakeScreenshot("ozon_phone_verification_code_entered");
+
+            Logger.LogInformation("Check for email verification requirement...");
+
+            var requiresEmail = await pageObject.IsEmailVerificationRequired();
+            if (requiresEmail)
+            {
+                await pageObject.SelectEmailVerification();
+
+                Logger.LogInformation("Email verification requested");
+
+                var emailVerificationCode = await input.GetEmailVerificationCode();
+                await pageObject.EnterEmailVerificationCode(emailVerificationCode);
+
+                Logger.LogInformation("Email verification code entered");
+                await TakeScreenshot("ozon_email_verification_code_entered");
+            }
+
+            Logger.LogInformation("Successful authorization");
+            await TakeScreenshot("ozon_successful_authorization");
+        }
     }
 
     protected override async Task<double> GetPriceCore()
