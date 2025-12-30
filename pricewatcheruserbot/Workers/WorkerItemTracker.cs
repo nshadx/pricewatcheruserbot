@@ -8,15 +8,23 @@ public class WorkerItemTracker(IMemoryCache memoryCache)
     public bool IsPriceDecreased(WorkerItem workerItem, double currentPrice, out double difference)
     {
         difference = 0;
+        var isPriceDecreased = false;
         
-        if (memoryCache.TryGetValue<double>(workerItem.Id, out var previousPrice))
+        if (memoryCache.TryGetValue<SimpleMovingAverage>(workerItem.Id, out var sma))
         {
-            difference = previousPrice - currentPrice;
+            if (sma is not null && sma.TryGetLatestValue(out var value))
+            {
+                isPriceDecreased = currentPrice < value;
+                difference = value - currentPrice;
+            }
         }
-
-        memoryCache.Set(workerItem.Id, currentPrice);
         
-        return difference > 0;
+        sma ??= new(3);
+        sma.Update((int)currentPrice);
+        
+        memoryCache.Set(workerItem.Id, sma);
+        
+        return isPriceDecreased;
     }
 
     public void Remove(WorkerItem workerItem)
