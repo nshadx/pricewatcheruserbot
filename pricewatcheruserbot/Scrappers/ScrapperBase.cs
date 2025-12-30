@@ -23,7 +23,7 @@ public abstract class ScrapperBase
         
         Logger.LogInformation("Page init...");
         
-        await Page.GotoAsync(Host.ToString());
+        await Page.GotoAsync(BaseUrl.ToString());
         
         Logger.LogInformation("Page loaded");
         await TakeScreenshot("authorization_page_loaded");
@@ -69,7 +69,7 @@ public abstract class ScrapperBase
         }
     }
     
-    public abstract Uri Host { get; }
+    public abstract Uri BaseUrl { get; }
     
     protected BrowserService BrowserService { get; }
     protected ILogger Logger { get; }
@@ -85,5 +85,5 @@ public abstract class ScrapperBase
     protected abstract Task AuthorizeCore();
     protected abstract Task<double> GetPriceCore();
     
-    private bool IsUrlBelongsHost(Uri url) => url.Host.Replace("www", string.Empty) == Host.Host.Replace("www", string.Empty);
+    private bool IsUrlBelongsHost(Uri url) => url.Host.Replace("www", string.Empty) == BaseUrl.Host.Replace("www", string.Empty);
 }

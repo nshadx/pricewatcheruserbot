@@ -11,7 +11,7 @@ public class OzonScrapper(
     OzonInput input
 ) : ScrapperBase(logger, browserService, configuration)
 {
-    public override Uri Host { get; } = new("https://ozon.ru");
+    public override Uri BaseUrl { get; } = new("https://ozon.ru");
 
     protected override async Task AuthorizeCore()
     {

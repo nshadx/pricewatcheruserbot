@@ -11,7 +11,7 @@ public class ScrapperService(
         {
             try
             {
-                logger.LogInformation("Begin login for {host}...", scrapper.Host);
+                logger.LogInformation("Begin login for {host}...", scrapper.BaseUrl);
 
                 await scrapper.Authorize();
 
@@ -19,7 +19,7 @@ public class ScrapperService(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed login for {host}", scrapper.Host);
+                logger.LogError(ex, "Failed login for {host}", scrapper.BaseUrl);
             }
         }
     }

@@ -11,7 +11,7 @@ public class WildberriesScrapper(
     IOptions<BrowserConfiguration> configuration
 ) : ScrapperBase(logger, browserService, configuration)
 {
-    public override Uri Host { get; } = new("https://wildberries.ru");
+    public override Uri BaseUrl { get; } = new("https://wildberries.ru");
     
     protected override async Task AuthorizeCore()
     {

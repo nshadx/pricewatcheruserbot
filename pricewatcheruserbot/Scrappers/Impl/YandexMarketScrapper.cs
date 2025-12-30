@@ -10,7 +10,7 @@ public class YandexMarketScrapper(
     IOptions<BrowserConfiguration> configuration
 ) : ScrapperBase(logger, browserService, configuration)
 {
-    public override Uri Host { get; } = new("https://market.yandex.ru");
+    public override Uri BaseUrl { get; } = new("https://market.yandex.ru");
     
     protected override Task AuthorizeCore()
     {
