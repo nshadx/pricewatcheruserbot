@@ -52,14 +52,10 @@ if ($LASTEXITCODE -ne 0) {
 
 Set-Location "publish"
 
-# ================= .ENV ======================
-if (-not (Test-Path "appsettings.json")) {
+# ================= appsettings.json ======================
+$TelegramApiId       = Read-Host "Enter telegram api_id"
+$TelegramApiHash     = Read-Host "Enter telegram api_hash"
 
-    Write-Host "appsettings.json not found" -ForegroundColor Yellow
-
-    $TelegramApiId       = Read-Host "Enter telegram api_id"
-    $TelegramApiHash     = Read-Host "Enter telegram api_hash"
-    
 @"
 {
   "ConnectionStrings": {
@@ -82,11 +78,7 @@ if (-not (Test-Path "appsettings.json")) {
 }
 "@ | Out-File "appsettings.json" -Encoding UTF8 -Force
 
-    Write-Host "appsettings.json created" -ForegroundColor Green
-}
-else {
-    Write-Host "appsettings.json already exists, skipping..." -ForegroundColor Green
-}
+Write-Host "appsettings.json created" -ForegroundColor Green
 
 # ================= PLAYWRIGHT ================
 
