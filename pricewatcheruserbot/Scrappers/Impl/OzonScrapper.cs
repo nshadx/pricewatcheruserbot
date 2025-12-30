@@ -17,6 +17,12 @@ public class OzonScrapper(
     {
         PageObject pageObject = new(Page);
 
+        Logger.LogInformation("Closing modals...");
+        
+        await pageObject.CloseModals();
+        
+        Logger.LogInformation("Modals closed");
+
         Logger.LogInformation("Check for login requirement...");
 
         var requiresLogin = await pageObject.RequiresLogin();
@@ -26,7 +32,6 @@ public class OzonScrapper(
 
         if (requiresLogin)
         {
-            Logger.LogInformation("Begin login...");
             await TakeScreenshot("ozon_begin_login");
 
             await pageObject.OpenLoginForm();
@@ -109,6 +114,11 @@ public class OzonScrapper(
 
     private class PageObject(IPage page)
     {
+        public Task CloseModals()
+        {
+            return Task.CompletedTask;
+        }
+        
         public async Task<bool> IsEmailVerificationRequired()
         {
             var locator = page
@@ -185,6 +195,9 @@ public class OzonScrapper(
         public async Task<bool> RequiresLogin()
         {
             var locator = page.Locator("//div[contains(@data-widget, 'profileMenuAnonymous')]").First;
+
+            await page.WaitForRequestFinishedAsync(new PageWaitForRequestFinishedOptions() { Predicate = request => request.Url.Contains("vendor-workbox") });
+            await locator.WaitForAsync();
 
             return await locator.IsVisibleAsync() && await locator.IsEnabledAsync();
         }

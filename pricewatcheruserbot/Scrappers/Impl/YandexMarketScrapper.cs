@@ -17,6 +17,12 @@ public class YandexMarketScrapper(
     {
         PageObject pageObject = new(Page);
         
+        Logger.LogInformation("Closing modals...");
+        
+        await pageObject.CloseModals();
+        
+        Logger.LogInformation("Modals closed");
+
         Logger.LogInformation("Check for login requirement...");
 
         var requiresLogin = await pageObject.RequiresLogin();
@@ -26,7 +32,6 @@ public class YandexMarketScrapper(
 
         if (requiresLogin)
         {
-            Logger.LogInformation("Begin login...");
             await TakeScreenshot("yandex_market_begin_login");
 
             await pageObject.OpenLoginForm();
@@ -67,14 +72,7 @@ public class YandexMarketScrapper(
     protected override async Task<double> GetPriceCore()
     {
         PageObject pageObject = new(Page);
-
-        Logger.LogInformation("Trying to close login box...");
-            
-        await pageObject.CloseLoginBox();
-            
-        Logger.LogInformation("Login box closed");
-        await TakeScreenshot("yandex_market_login_box_closed");
-            
+        
         Logger.LogInformation("Begin price selecting...");
             
         var priceString = await pageObject.GetPrice();
@@ -88,6 +86,26 @@ public class YandexMarketScrapper(
 
     private class PageObject(IPage page)
     {
+        public async Task CloseModals()
+        {
+            var locator = page
+                .Locator("//div[contains(@data-baobab-name, 'loginPopup')]").First;
+        
+            if (await locator.IsVisibleAsync())
+            {
+                var boundingBox = await locator.BoundingBoxAsync();
+        
+                if (boundingBox is not null)
+                {
+                    const int offset = 100;
+                    var leftX = boundingBox.X - boundingBox.Width / 2 - offset;
+                    var leftY = boundingBox.Y;
+                
+                    await page.Mouse.ClickAsync(leftX, leftY);
+                }
+            }
+        }
+        
         public async Task SelectAccount(string account)
         {
             var locator = page.Locator($"//div[contains(@class, 'Suggest-account-list')]/descendant::div[contains(., '{account}')]/div[contains(@data-react-aria-pressable, 'true')]");
@@ -147,27 +165,9 @@ public class YandexMarketScrapper(
             var locator = page
                 .Locator("//div[contains(@id, 'USER_MENU_ANCHOR')]/descendant::a[contains(text(), 'Войти')]");
 
-            return await locator.IsVisibleAsync();
-        }
-        
-        public async Task CloseLoginBox()
-        {
-            var locator = page
-                .Locator("//div[contains(@data-baobab-name, 'loginPopup')]").First;
+            await locator.WaitForAsync();
 
-            if (await locator.IsVisibleAsync())
-            {
-                var boundingBox = await locator.BoundingBoxAsync();
-
-                if (boundingBox is not null)
-                {
-                    const int offset = 100;
-                    var leftX = boundingBox.X - boundingBox.Width / 2 - offset;
-                    var leftY = boundingBox.Y;
-                
-                    await page.Mouse.ClickAsync(leftX, leftY);
-                }
-            }
+            return await locator.IsVisibleAsync() && await locator.IsEnabledAsync();
         }
         
         public async Task<string?> GetPrice()

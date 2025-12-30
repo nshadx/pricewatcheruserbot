@@ -16,6 +16,12 @@ public class WildberriesScrapper(
     protected override async Task AuthorizeCore()
     {
         PageObject pageObject = new(Page);
+
+        Logger.LogInformation("Closing modals...");
+        
+        await pageObject.CloseModals();
+        
+        Logger.LogInformation("Modals closed");
         
         Logger.LogInformation("Check for login requirement...");
 
@@ -26,7 +32,6 @@ public class WildberriesScrapper(
 
         if (requiresLogin)
         {
-            Logger.LogInformation("Begin login...");
             await TakeScreenshot("wildberries_begin_login");
 
             await pageObject.OpenLoginForm();
@@ -76,6 +81,23 @@ public class WildberriesScrapper(
 
     private class PageObject(IPage page)
     {
+        public async Task CloseModals()
+        {
+            var locator = page
+                .Locator("//div[contains(@class, 'popupContent')]").First;
+
+            var boundingBox = await locator.BoundingBoxAsync();
+            
+            if (boundingBox is not null)
+            {
+                const int offset = 100;
+                var leftX = boundingBox.X - boundingBox.Width / 2 - offset;
+                var leftY = boundingBox.Y;
+            
+                await page.Mouse.ClickAsync(leftX, leftY);
+            }
+        }
+        
         public async Task EnterPhoneVerificationCode(string code)
         {
             var locator = page
@@ -113,7 +135,9 @@ public class WildberriesScrapper(
             var locator = page
                 .Locator("//a[contains(@data-wba-header-name, 'Login')]/descendant::p[contains(text(), 'Войти')]");
 
-            return await locator.IsVisibleAsync();
+            await locator.WaitForAsync();
+
+            return await locator.IsVisibleAsync() && await locator.IsEnabledAsync();
         }
         
         public async Task<string?> GetPrice()

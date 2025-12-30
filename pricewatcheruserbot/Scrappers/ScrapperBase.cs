@@ -51,7 +51,6 @@ public abstract class ScrapperBase
         
         Logger.LogInformation("Page init...");
         
-        Page.SetDefaultTimeout(15000);
         await Page.GotoAsync(url.ToString());
         
         Logger.LogInformation("Page loaded");
