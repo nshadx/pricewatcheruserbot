@@ -1,4 +1,4 @@
-﻿# ================= НАСТРОЙКИ =================
+﻿# ================= settings =================
 $repoUrl     = "https://github.com/nshadx/pricewatcheruserbot"
 $repoName    = "pricewatcheruserbot"
 $projectName = "pricewatcheruserbot"
@@ -20,7 +20,7 @@ if (-not (Get-Command "git" -ErrorAction SilentlyContinue)) {
         exit 1
 }
 
-# ================= GIT =======================
+# ================= git =======================
 if (-not (Test-Path $repoName)) {
     Write-Host "Cloning repository..." -ForegroundColor Cyan
     git clone $repoUrl
@@ -33,7 +33,7 @@ if (-not (Test-Path $repoName)) {
     if ($LASTEXITCODE -ne 0) { exit 1 }
 }
 
-# ================= BUILD =====================
+# ================= publish =====================
 Write-Host "Publishing..." -ForegroundColor Cyan
 
 $project = Join-Path $projectName "$projectName.csproj";
@@ -52,9 +52,13 @@ if ($LASTEXITCODE -ne 0) {
 Set-Location "publish"
 
 # ================= appsettings.json ======================
-$TelegramApiId       = Read-Host "Enter telegram api_id"
-$TelegramApiHash     = Read-Host "Enter telegram api_hash"
+if (-not (Test-Path "appsettings.json")) {
 
+    Write-Host "appsettings.json not found" -ForegroundColor Yellow
+
+    $TelegramApiId       = Read-Host "Enter telegram api_id"
+    $TelegramApiHash     = Read-Host "Enter telegram api_hash"
+    
 @"
 {
   "ConnectionStrings": {
@@ -77,9 +81,13 @@ $TelegramApiHash     = Read-Host "Enter telegram api_hash"
 }
 "@ | Out-File "appsettings.json" -Encoding UTF8 -Force
 
-Write-Host "appsettings.json created" -ForegroundColor Green
+    Write-Host "appsettings.json created" -ForegroundColor Green
+}
+else {
+    Write-Host "appsettings.json already exists, skipping..." -ForegroundColor Green
+}
 
-# ================= PLAYWRIGHT ================
+# ================= playwright ================
 
 $playwright = Get-ChildItem -Recurse -Filter "playwright.ps1" | Select-Object -First 1
 if (-not $playwright) {
@@ -91,7 +99,7 @@ Write-Host "Playwright install..." -ForegroundColor Cyan
 pwsh $playwright.FullName install
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
-# ================= RUN =======================
+# ================= run =======================
 $exe = Get-ChildItem -Recurse -Filter "$projectName.dll" | Select-Object -First 1
 
 Write-Host "Starting (interactive)..." -ForegroundColor Green

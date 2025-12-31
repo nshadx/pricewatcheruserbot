@@ -42,6 +42,7 @@ public class OzonScrapper(
             Logger.LogInformation("Phone number requested");
 
             var phoneNumber = await input.GetPhoneNumber();
+            await TakeScreenshot("ozon_page_loaded_input_1");
             await pageObject.EnterPhoneNumber(phoneNumber);
 
             Logger.LogInformation("Phone number entered");
@@ -54,12 +55,12 @@ public class OzonScrapper(
             Logger.LogInformation("Form submitted");
             await TakeScreenshot("ozon_form_submitted");
 
-            var isPhoneInvalid = await pageObject.IsPhoneNumberInvalid();
-            if (isPhoneInvalid)
-            {
-                Logger.LogError("Invalid phone number entered");
-                return;
-            }
+            // var isPhoneInvalid = await pageObject.IsPhoneNumberInvalid();
+            // if (isPhoneInvalid)
+            // {
+            //     Logger.LogError("Invalid phone number entered");
+            //     return;
+            // }
 
             Logger.LogInformation("Select code via phone authentication way...");
 
@@ -71,6 +72,7 @@ public class OzonScrapper(
             Logger.LogInformation("Phone verification code requested");
 
             var phoneVerificationCode = await input.GetPhoneVerificationCode();
+            await TakeScreenshot("ozon_page_loaded_input_2");
             await pageObject.EnterPhoneVerificationCode(phoneVerificationCode);
 
             Logger.LogInformation("Phone verification code entered");
@@ -86,6 +88,7 @@ public class OzonScrapper(
                 Logger.LogInformation("Email verification requested");
 
                 var emailVerificationCode = await input.GetEmailVerificationCode();
+                await TakeScreenshot("ozon_page_loaded_input_3");
                 await pageObject.EnterEmailVerificationCode(emailVerificationCode);
 
                 Logger.LogInformation("Email verification code entered");
@@ -183,14 +186,14 @@ public class OzonScrapper(
             await locator.FillAsync(phoneNumber);
         }
 
-        public async Task<bool> IsPhoneNumberInvalid()
-        {
-            var locator = page
-                .FrameLocator("#authFrame")
-                .Locator("//p[contains(text(), 'Некорректный формат телефона')]").First;
-
-            return await locator.IsVisibleAsync();
-        }
+        // public async Task<bool> IsPhoneNumberInvalid()
+        // {
+        //     var locator = page
+        //         .FrameLocator("#authFrame")
+        //         .Locator("//p[contains(text(), 'Некорректный формат телефона')]").First;
+        //
+        //     return await locator.IsVisibleAsync();
+        // }
 
         public async Task<bool> RequiresLogin()
         {
@@ -198,7 +201,6 @@ public class OzonScrapper(
 
             // i removed 'networkidle' awaiter before, it causes an issue for Ozon: we should await latest .js script that enables login button 
             await page.WaitForRequestFinishedAsync(new PageWaitForRequestFinishedOptions() { Predicate = request => request.Url.Contains("vendor-workbox") });
-            await locator.WaitForAsync();
 
             return await locator.IsVisibleAsync() && await locator.IsEnabledAsync();
         }

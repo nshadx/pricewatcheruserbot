@@ -42,6 +42,7 @@ public class WildberriesScrapper(
             Logger.LogInformation("Phone number requested");
 
             var phoneNumber = await input.GetPhoneNumber();
+            await TakeScreenshot("wildberries_page_loaded_input_1");
             await pageObject.EnterPhoneNumber(phoneNumber);
 
             Logger.LogInformation("Phone number entered");
@@ -57,6 +58,7 @@ public class WildberriesScrapper(
             Logger.LogInformation("Phone verification code requested");
 
             var phoneVerificationCode = await input.GetPhoneVerificationCode();
+            await TakeScreenshot("wildberries_page_loaded_input_2");
             await pageObject.EnterPhoneVerificationCode(phoneVerificationCode);
 
             Logger.LogInformation("Phone verification code entered");
@@ -134,9 +136,7 @@ public class WildberriesScrapper(
         {
             var locator = page
                 .Locator("//a[contains(@data-wba-header-name, 'Login')]/descendant::p[contains(text(), 'Войти')]");
-
-            await locator.WaitForAsync();
-
+            
             return await locator.IsVisibleAsync() && await locator.IsEnabledAsync();
         }
         

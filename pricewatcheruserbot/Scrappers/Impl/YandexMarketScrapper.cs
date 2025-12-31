@@ -42,6 +42,7 @@ public class YandexMarketScrapper(
             Logger.LogInformation("Phone number requested");
 
             var phoneNumber = await input.GetPhoneNumber();
+            await TakeScreenshot("yandex_market_page_loaded_input_1");
             await pageObject.EnterPhoneNumber(phoneNumber);
 
             Logger.LogInformation("Phone number entered");
@@ -57,12 +58,14 @@ public class YandexMarketScrapper(
             Logger.LogInformation("Phone verification code requested");
 
             var phoneVerificationCode = await input.GetPhoneVerificationCode();
+            await TakeScreenshot("yandex_market_page_loaded_input_2");
             await pageObject.EnterPhoneVerificationCode(phoneVerificationCode);
 
             Logger.LogInformation("Phone verification code entered");
             await TakeScreenshot("yandex_market_phone_verification_code_entered");
             
             var suggestedAccounts = await pageObject.GetSuggestedAccounts();
+            await TakeScreenshot("yandex_market_page_loaded_input_3");
             var account = await input.GetAccount(suggestedAccounts);
 
             await pageObject.SelectAccount(account);
@@ -164,9 +167,7 @@ public class YandexMarketScrapper(
         {
             var locator = page
                 .Locator("//div[contains(@id, 'USER_MENU_ANCHOR')]/descendant::a[contains(text(), 'Войти')]");
-
-            await locator.WaitForAsync();
-
+            
             return await locator.IsVisibleAsync() && await locator.IsEnabledAsync();
         }
         
