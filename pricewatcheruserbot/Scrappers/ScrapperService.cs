@@ -1,6 +1,7 @@
 ﻿namespace pricewatcheruserbot.Scrappers;
 
 public class ScrapperService(
+    ScrapperServiceInput input,
     ILogger<ScrapperService> logger,
     IEnumerable<ScrapperBase> scrappers
 )
@@ -9,6 +10,11 @@ public class ScrapperService(
     {
         foreach (var scrapper in scrappers)
         {
+            if (!await input.HasAccount(scrapper.BaseUrl))
+            {
+                continue;
+            }
+            
             try
             {
                 logger.LogInformation("Begin login for {host}...", scrapper.BaseUrl);

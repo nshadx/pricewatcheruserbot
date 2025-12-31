@@ -2,8 +2,6 @@
 
 public interface IUserInput
 {
-    Task<string?> RequestAndWait(
-        string description,
-        string property
-    );
+    Task<string?> RequestAndWait(string description, string property);
+    Task<bool> YesNoWait(string description);
 }
