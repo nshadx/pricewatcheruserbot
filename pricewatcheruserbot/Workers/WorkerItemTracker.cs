@@ -5,6 +5,8 @@ namespace pricewatcheruserbot.Workers;
 
 public class WorkerItemTracker(IMemoryCache memoryCache)
 {
+    private const int _windowSize = 5;
+    
     public bool IsPriceDecreased(WorkerItem workerItem, double currentPrice, out double difference)
     {
         difference = 0;
@@ -19,7 +21,7 @@ public class WorkerItemTracker(IMemoryCache memoryCache)
             }
         }
         
-        sma ??= new(3);
+        sma ??= new(5);
         sma.Update((int)currentPrice);
         
         memoryCache.Set(workerItem.Id, sma);

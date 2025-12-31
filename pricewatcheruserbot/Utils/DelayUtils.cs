@@ -6,8 +6,8 @@ public static class DelayUtils
     private static readonly TimeSpan _userAgentFetchDelay = TimeSpan.FromMinutes(60);
     
     public static Task RandomNext(
-        int minMinutes = 10,
-        int maxMinutes = 15,
+        int minMinutes = 2,
+        int maxMinutes = 5,
         CancellationToken cancellationToken = default
     )
     {
