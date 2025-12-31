@@ -9,12 +9,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.1" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.1">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.1" />
+        <PackageReference Include="FluentMigrator" Version="7.2.0" />
+        <PackageReference Include="FluentMigrator.Runner" Version="7.2.0" />
+        <PackageReference Include="FluentMigrator.Runner.SQLite" Version="7.2.0" />
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.1" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.1"/>
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.1" />
         <PackageReference Include="Microsoft.Playwright" Version="1.57.0" />

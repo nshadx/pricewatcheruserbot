@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using pricewatcheruserbot.Entities;
+﻿using pricewatcheruserbot.Services;
 using TL;
 
 namespace pricewatcheruserbot.Telegram;
@@ -7,52 +6,34 @@ namespace pricewatcheruserbot.Telegram;
 public class MessageManager(
     WTelegram.Client client,
     MessageSender messageSender,
-    AppDbContext dbContext
+    WorkerItemService workerItemService,
+    SentMessageService sentMessageService
 )
 {
     public async Task UpdateAllLists()
     {
-        var workerItems = await dbContext.WorkerItems
-            .OrderBy(x => x.Order)
-            .ToListAsync();
-        var listMessages = dbContext.SentMessages
-            .Where(x => x.Type == MessageType.LIST)
-            .AsAsyncEnumerable();
-        
-        await foreach (var message in listMessages)
+        var names = workerItemService.GetNames();
+        var lists = sentMessageService.DeleteAll(SentMessageType.List);
+        foreach (var messageId in lists)
         {
-            await messageSender.Edit_WorkerItemList(workerItems, message);
+            await messageSender.Edit_WorkerItemList(names, messageId);
         }
     }
 
     public async Task SetCurrentNewList()
     {
-        var workerItems = await dbContext.WorkerItems
-            .OrderBy(x => x.Order)
-            .ToListAsync();
-        var newMessage = await messageSender.Send_WorkerItemList(workerItems);
-        
-        var listMessages = dbContext.SentMessages
-            .Where(x => x.Type == MessageType.LIST)
-            .AsAsyncEnumerable();
-        
-        await foreach (var message in listMessages)
+        var lists = sentMessageService.DeleteAll(SentMessageType.List);
+        foreach (var id in lists)
         {
             await client.DeleteMessages(
                 peer: InputPeer.Self,
-                id: message.TelegramId
+                id: id
             );
-            dbContext.SentMessages.Remove(message);
         }
 
-        SentMessage sentMessage = new()
-        {
-            TelegramId = newMessage.id,
-            Type = MessageType.LIST
-        };
-
-        await dbContext.SentMessages.AddAsync(sentMessage);
-        await dbContext.SaveChangesAsync();
+        var urls = workerItemService.GetNames();
+        var newMessage = await messageSender.Send_WorkerItemList(urls);
+        sentMessageService.Add(newMessage.id, SentMessageType.List);
     }
 
     public async Task DeleteMessage(Message message)

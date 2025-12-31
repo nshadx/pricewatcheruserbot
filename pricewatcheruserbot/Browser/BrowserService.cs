@@ -75,7 +75,7 @@ public class BrowserService : IAsyncDisposable, IDisposable
             _browser = await _instance.Chromium.LaunchAsync(options);
         }
 
-        if (_browserContext is null || _roundCount + 1 > 3)
+        if (_browserContext is null || _roundCount >= 3)
         {
             BrowserNewContextOptions options = new();
 

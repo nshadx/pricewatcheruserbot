@@ -1,36 +1,14 @@
 ﻿using System.Threading.Channels;
-using Microsoft.Data.Sqlite;
+using pricewatcheruserbot.Services;
 using pricewatcheruserbot.Utils;
 
 namespace pricewatcheruserbot.Browser;
 
 public class UserAgentRefresher(
     IEnumerable<IUserAgentFetcher> fetchers,
-    IConfiguration configuration
+    UserAgentService userAgentService
 ) : BackgroundService
 {
-    private readonly SqliteCommand _insertCommand = new("""
-                                                        INSERT INTO "UserAgents" ("Value") VALUES (@value)
-                                                        """)
-    {
-        Parameters = { new SqliteParameter("@value", SqliteType.Text) }
-    };
-
-    private readonly SqliteCommand _deduplicationCommand = new("""
-                                                               WITH ranked AS (
-                                                                   SELECT
-                                                                       "Id",
-                                                                       ROW_NUMBER() OVER (PARTITION BY "Value" ORDER BY "Id") AS rn
-                                                                   FROM "UserAgents"
-                                                               )
-                                                               DELETE FROM "UserAgents"
-                                                               WHERE "Id" IN (
-                                                                   SELECT "Id"
-                                                                   FROM ranked
-                                                                   WHERE rn > 1
-                                                               );
-                                                               """);
-    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -47,13 +25,6 @@ public class UserAgentRefresher(
         }
     }
 
-    public override void Dispose()
-    {
-        _insertCommand.Dispose();
-        _deduplicationCommand.Dispose();
-        base.Dispose();
-    }
-
     private async Task ProducerTask(IAsyncEnumerable<string> source, ChannelWriter<string> channel, CancellationToken stoppingToken)
     {
         await Parallel.ForEachAsync(source, stoppingToken, channel.WriteAsync);
@@ -62,30 +33,9 @@ public class UserAgentRefresher(
 
     private async Task ConsumerTask(ChannelReader<string> channel, CancellationToken stoppingToken)
     {
-        var dbConnectionString = configuration.GetConnectionString("DbConnection");
-        using (var connection = new SqliteConnection(dbConnectionString))
+        await foreach (var value in channel.ReadAllAsync(stoppingToken))
         {
-            connection.Open();
-
-            using (var transaction = connection.BeginTransaction())
-            {
-                _insertCommand.Connection = connection;
-                _insertCommand.Transaction = transaction;
-                
-                await foreach (var value in channel.ReadAllAsync(stoppingToken))
-                {
-                    _insertCommand.Parameters["@value"].Value = value;
-                    _insertCommand.ExecuteNonQuery();
-                }
-
-                _deduplicationCommand.Connection = connection;
-                _deduplicationCommand.Transaction = transaction;
-                _deduplicationCommand.ExecuteNonQuery();
-
-                transaction.Commit();
-            }
-
-            connection.Close();
+            userAgentService.Add(value);
         }
     }
 }

@@ -10,7 +10,7 @@ public class ScrapperService(
     {
         foreach (var scrapper in scrappers)
         {
-            if (!await input.HasAccount(scrapper.BaseUrl))
+            if (await scrapper.IsAuthorized() || !await input.HasAccount(scrapper.BaseUrl))
             {
                 continue;
             }

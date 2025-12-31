@@ -11,9 +11,52 @@ public class YandexMarketScrapper(
     IOptions<BrowserConfiguration> configuration
 ) : ScrapperBase(logger, browserService, configuration)
 {
-    public override Uri BaseUrl { get; } = new("https://market.yandex.ru");
+    public override string BaseUrl { get; } = new("https://market.yandex.ru");
     
     protected override async Task AuthorizeCore()
+    {
+        PageObject pageObject = new(Page);
+        
+        await TakeScreenshot("yandex_market_begin_login");
+
+        await pageObject.OpenLoginForm();
+
+        Logger.LogInformation("Login form opened");
+        await TakeScreenshot("yandex_market_login_form_opened");
+
+        Logger.LogInformation("Phone number requested");
+
+        var phoneNumber = await input.GetPhoneNumber();
+        await TakeScreenshot("yandex_market_page_loaded_input_1");
+        await pageObject.EnterPhoneNumber(phoneNumber);
+
+        Logger.LogInformation("Phone number entered");
+        await TakeScreenshot("yandex_market_phone_number_entered");
+
+        Logger.LogInformation("Submitting form...");
+
+        await pageObject.LoginSubmit();
+
+        Logger.LogInformation("Form submitted");
+        await TakeScreenshot("yandex_market_form_submitted");
+            
+        Logger.LogInformation("Phone verification code requested");
+
+        var phoneVerificationCode = await input.GetPhoneVerificationCode();
+        await TakeScreenshot("yandex_market_page_loaded_input_2");
+        await pageObject.EnterPhoneVerificationCode(phoneVerificationCode);
+
+        Logger.LogInformation("Phone verification code entered");
+        await TakeScreenshot("yandex_market_phone_verification_code_entered");
+            
+        var suggestedAccounts = await pageObject.GetSuggestedAccounts();
+        await TakeScreenshot("yandex_market_page_loaded_input_3");
+        var account = await input.GetAccount(suggestedAccounts);
+
+        await pageObject.SelectAccount(account);
+    }
+
+    protected override async Task<bool> IsAuthorizedCore()
     {
         PageObject pageObject = new(Page);
         
@@ -30,46 +73,7 @@ public class YandexMarketScrapper(
         Logger.LogInformation("Login requirement check completed");
         await TakeScreenshot("yandex_market_login_requirement_check");
 
-        if (requiresLogin)
-        {
-            await TakeScreenshot("yandex_market_begin_login");
-
-            await pageObject.OpenLoginForm();
-
-            Logger.LogInformation("Login form opened");
-            await TakeScreenshot("yandex_market_login_form_opened");
-
-            Logger.LogInformation("Phone number requested");
-
-            var phoneNumber = await input.GetPhoneNumber();
-            await TakeScreenshot("yandex_market_page_loaded_input_1");
-            await pageObject.EnterPhoneNumber(phoneNumber);
-
-            Logger.LogInformation("Phone number entered");
-            await TakeScreenshot("yandex_market_phone_number_entered");
-
-            Logger.LogInformation("Submitting form...");
-
-            await pageObject.LoginSubmit();
-
-            Logger.LogInformation("Form submitted");
-            await TakeScreenshot("yandex_market_form_submitted");
-            
-            Logger.LogInformation("Phone verification code requested");
-
-            var phoneVerificationCode = await input.GetPhoneVerificationCode();
-            await TakeScreenshot("yandex_market_page_loaded_input_2");
-            await pageObject.EnterPhoneVerificationCode(phoneVerificationCode);
-
-            Logger.LogInformation("Phone verification code entered");
-            await TakeScreenshot("yandex_market_phone_verification_code_entered");
-            
-            var suggestedAccounts = await pageObject.GetSuggestedAccounts();
-            await TakeScreenshot("yandex_market_page_loaded_input_3");
-            var account = await input.GetAccount(suggestedAccounts);
-
-            await pageObject.SelectAccount(account);
-        }
+        return !requiresLogin;
     }
 
     protected override async Task<double> GetPriceCore()

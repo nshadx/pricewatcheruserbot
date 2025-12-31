@@ -1,5 +1,16 @@
 ﻿namespace pricewatcheruserbot.Workers;
 
+public class SimpleMovingAverageState
+{
+    public int K { get; set; }
+    public int CurrentK { get; set; }
+    public int[] Values { get; set; } = [];
+    public int Index { get; set; }
+    public int Sum { get; set; }
+    public double Sma { get; set; }
+    public int Previous { get; set; }
+}
+
 public class SimpleMovingAverage
 {
     private readonly int _k;
@@ -32,6 +43,17 @@ public class SimpleMovingAverage
         _k = k;
         _values = new int[_k];
     }
+
+    public SimpleMovingAverage(SimpleMovingAverageState state)
+    {
+        _currentK = state.CurrentK;
+        _k = state.K;
+        _values = state.Values;
+        _index = state.Index;
+        _sma = state.Sma;
+        _sum = state.Sum;
+        Previous = state.Previous;
+    }
     
     public void Update(int nextInput)
     {
@@ -49,5 +71,19 @@ public class SimpleMovingAverage
         _index = (_index + 1) % _k;
 
         _sma = (double)_sum / _k;
+    }
+
+    public SimpleMovingAverageState Save()
+    {
+        return new SimpleMovingAverageState
+        {
+            K = _k,
+            CurrentK = _currentK,
+            Index = _index,
+            Sum = _sum,
+            Sma = _sma,
+            Previous = Previous,
+            Values = _values
+        };
     }
 }

@@ -1,24 +1,20 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using pricewatcheruserbot.Utils;
+using pricewatcheruserbot.Services;
 
 namespace pricewatcheruserbot.Browser;
 
-public class UserAgentProvider(AppDbContext dbContext)
+public class UserAgentProvider(UserAgentService userAgentService)
 {
+    private const string _defaultUserAgentForChrome = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
     private string? _osName;
     
     public async Task<string> GetRandomUserAgent(string browserName)
     {
         await Initialize();
 
-        var enumerable = dbContext.UserAgents
-            .AsAsyncEnumerable()
-            .Shuffle(window: 128)
-            .Select(x => x.Value)
-            .Where(x => x.Contains(browserName) && x.Contains(_osName));
-
-        var value = await enumerable.FirstAsync();
-        
+        var value = userAgentService.GetUserAgents(_osName, browserName)
+            .Shuffle()
+            .FirstOrDefault(_defaultUserAgentForChrome);
         return value;
     }
     

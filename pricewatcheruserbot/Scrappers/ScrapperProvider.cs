@@ -23,9 +23,9 @@ public class ScrapperProvider
             .Single();
     }
 
-    public ScrapperBase GetByUrl(Uri url)
+    public ScrapperBase GetByUrl(string url)
     {
-        return url.Host switch
+        return new Uri(url).Host switch
         {
             "www.ozon.ru" or "ozon.ru" => _ozonScrapperBase,
             "www.wildberries.ru" or "wildberries.ru" => _wildberriesScrapperBase,

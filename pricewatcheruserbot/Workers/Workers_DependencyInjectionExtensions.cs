@@ -1,5 +1,5 @@
 ﻿using System.Threading.Channels;
-using pricewatcheruserbot.Entities;
+using pricewatcheruserbot.Services;
 
 namespace pricewatcheruserbot.Workers;
 

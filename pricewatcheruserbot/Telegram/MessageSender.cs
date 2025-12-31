@@ -1,5 +1,4 @@
-﻿using pricewatcheruserbot.Entities;
-using TL;
+﻿using TL;
 
 namespace pricewatcheruserbot.Telegram;
 
@@ -7,34 +6,34 @@ public class MessageSender(
     WTelegram.Client client
 )
 {
-    public async Task<Message> Send_PriceDropped(WorkerItem workerItem, double difference)
+    public async Task<Message> Send_PriceDropped(string name, double difference)
     {
         var message = await client.SendMessageAsync(
             peer: InputPeer.Self,
-            text: $"{MessageUtils.GenerateRandomEmojis(3)}: The item's ({workerItem}) price has dropped by {difference}"
+            text: $"{MessageUtils.GenerateRandomEmojis(3)}: The item's ({name}) price has dropped by {difference}"
         );
 
         return message;
     }
     
-    public async Task<Message> Send_WorkerItemList(IReadOnlyCollection<WorkerItem> workerItems)
+    public async Task<Message> Send_WorkerItemList(IEnumerable<string> names)
     {
         var message = await client.SendMessageAsync(
             peer: InputPeer.Self,
-            text: GetText_WorkerItemList(workerItems)
+            text: GetText_WorkerItemList(names)
         );
 
         return message;
     }
     
-    public async Task Edit_WorkerItemList(IReadOnlyCollection<WorkerItem> workerItems, SentMessage message)
+    public async Task Edit_WorkerItemList(IEnumerable<string> names, int messageId)
     {
         _ = await client.Messages_EditMessage(
             peer: InputPeer.Self,
-            id: message.TelegramId,
-            message: GetText_WorkerItemList(workerItems)
+            id: messageId,
+            message: GetText_WorkerItemList(names)
         );
     }
 
-    private string GetText_WorkerItemList(IReadOnlyCollection<WorkerItem> workerItems) => workerItems.Count == 0 ? "<empty>" : string.Join('\n', workerItems.Select(x => x.ToString()));
+    private string GetText_WorkerItemList(IEnumerable<string> names) => string.Join('\n', names) is string s && !string.IsNullOrEmpty(s) ? s : "<empty>";
 }

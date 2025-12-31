@@ -23,7 +23,7 @@ public abstract class ScrapperBase
         
         Logger.LogInformation("Page init...");
         
-        await Page.GotoAsync(BaseUrl.ToString());
+        await Page.GotoAsync(BaseUrl);
         
         Logger.LogInformation("Page loaded");
         await TakeScreenshot("authorization_page_loaded");
@@ -40,7 +40,28 @@ public abstract class ScrapperBase
         }
     }
 
-    public async Task<double> GetPrice(Uri url)
+    public async Task<bool> IsAuthorized()
+    {
+        Page = await BrowserService.CreateNewPageWithinContext();
+        
+        Logger.LogInformation("Page init...");
+        
+        await Page.GotoAsync(BaseUrl);
+        
+        Logger.LogInformation("Page loaded");
+        await TakeScreenshot("authorization_page_loaded");
+
+        try
+        {
+            return await IsAuthorizedCore();
+        }
+        finally
+        {
+            await Page.CloseAsync();
+        }
+    }
+
+    public async Task<double> GetPrice(string url)
     {
         if (IsUrlBelongsHost(url))
         {
@@ -51,7 +72,7 @@ public abstract class ScrapperBase
         
         Logger.LogInformation("Page init...");
         
-        await Page.GotoAsync(url.ToString());
+        await Page.GotoAsync(url);
         
         Logger.LogInformation("Page loaded");
         await TakeScreenshot("price_page_loaded");
@@ -69,7 +90,7 @@ public abstract class ScrapperBase
         }
     }
     
-    public abstract Uri BaseUrl { get; }
+    public abstract string BaseUrl { get; }
     
     protected BrowserService BrowserService { get; }
     protected ILogger Logger { get; }
@@ -83,7 +104,8 @@ public abstract class ScrapperBase
     }
     
     protected abstract Task AuthorizeCore();
+    protected abstract Task<bool> IsAuthorizedCore();
     protected abstract Task<double> GetPriceCore();
     
-    private bool IsUrlBelongsHost(Uri url) => url.Host.Replace("www", string.Empty) == BaseUrl.Host.Replace("www", string.Empty);
+    private bool IsUrlBelongsHost(string url) => new Uri(url).Host.Replace("www", string.Empty) == new Uri(BaseUrl).Host.Replace("www", string.Empty);
 }

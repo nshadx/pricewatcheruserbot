@@ -1,36 +1,35 @@
-﻿using Microsoft.Extensions.Caching.Memory;
-using pricewatcheruserbot.Entities;
+﻿using pricewatcheruserbot.Services;
 
 namespace pricewatcheruserbot.Workers;
 
-public class WorkerItemTracker(IMemoryCache memoryCache)
+public class WorkerItemTracker(
+    WorkerItemService workerItemService
+)
 {
     private const int _windowSize = 5;
     
-    public bool IsPriceDecreased(WorkerItem workerItem, double currentPrice, out double difference)
+    public bool IsPriceDecreased(int id, double currentPrice, out double difference)
     {
         difference = 0;
         var isPriceDecreased = false;
-        
-        if (memoryCache.TryGetValue<SimpleMovingAverage>(workerItem.Id, out var sma))
+        var sma = workerItemService.GetSma(id); 
+        if (sma is not null)
         {
-            if (sma is not null && sma.TryGetLatestValue(out var value))
+            if (sma.TryGetLatestValue(out var value))
             {
                 isPriceDecreased = currentPrice < value;
                 difference = sma.Previous - currentPrice;
             }
         }
+        else
+        {
+            sma = new(_windowSize);
+        }
         
-        sma ??= new(5);
         sma.Update((int)currentPrice);
-        
-        memoryCache.Set(workerItem.Id, sma);
+
+        workerItemService.UpdateSma(id, sma);
         
         return isPriceDecreased;
-    }
-
-    public void Remove(WorkerItem workerItem)
-    {
-        memoryCache.Remove(workerItem.Id);
     }
 }

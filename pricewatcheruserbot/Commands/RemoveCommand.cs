@@ -1,6 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using pricewatcheruserbot.Services;
 using pricewatcheruserbot.Telegram;
-using pricewatcheruserbot.Workers;
 using TL;
 
 namespace pricewatcheruserbot.Commands;
@@ -21,29 +20,13 @@ public record RemoveCommand(Message Message, int Order)
     }
     
     public class Handler(
-        AppDbContext dbContext,
-        WorkerItemTracker workerItemTracker,
+        WorkerItemService workerItemService,
         MessageManager messageManager
     )
     {
         public async Task Handle(RemoveCommand command)
         {
-            var workerItem = await dbContext.WorkerItems
-                .Where(x => x.Order == command.Order)
-                .SingleAsync();
-            var itemsToUpdate = dbContext.WorkerItems
-                .Where(x => x.Order > command.Order)
-                .AsAsyncEnumerable();
-            
-            await foreach (var item in itemsToUpdate)
-            {
-                item.Order--;
-            }
-
-            dbContext.WorkerItems.Remove(workerItem);
-            await dbContext.SaveChangesAsync();
-
-            workerItemTracker.Remove(workerItem);
+            var id = workerItemService.Remove(command.Order);
 
             await messageManager.UpdateAllLists();
             await messageManager.DeleteMessage(command.Message);

@@ -11,9 +11,46 @@ public class WildberriesScrapper(
     IOptions<BrowserConfiguration> configuration
 ) : ScrapperBase(logger, browserService, configuration)
 {
-    public override Uri BaseUrl { get; } = new("https://wildberries.ru");
+    public override string BaseUrl { get; } = new("https://wildberries.ru");
     
     protected override async Task AuthorizeCore()
+    {
+        PageObject pageObject = new(Page);
+        
+        await TakeScreenshot("wildberries_begin_login");
+
+        await pageObject.OpenLoginForm();
+
+        Logger.LogInformation("Login form opened");
+        await TakeScreenshot("wildberries_login_form_opened");
+
+        Logger.LogInformation("Phone number requested");
+
+        var phoneNumber = await input.GetPhoneNumber();
+        await TakeScreenshot("wildberries_page_loaded_input_1");
+        await pageObject.EnterPhoneNumber(phoneNumber);
+
+        Logger.LogInformation("Phone number entered");
+        await TakeScreenshot("wildberries_phone_number_entered");
+
+        Logger.LogInformation("Submitting form...");
+
+        await pageObject.LoginSubmit();
+
+        Logger.LogInformation("Form submitted");
+        await TakeScreenshot("wildberries_form_submitted");
+            
+        Logger.LogInformation("Phone verification code requested");
+
+        var phoneVerificationCode = await input.GetPhoneVerificationCode();
+        await TakeScreenshot("wildberries_page_loaded_input_2");
+        await pageObject.EnterPhoneVerificationCode(phoneVerificationCode);
+
+        Logger.LogInformation("Phone verification code entered");
+        await TakeScreenshot("wildberries_phone_verification_code_entered");
+    }
+
+    protected override async Task<bool> IsAuthorizedCore()
     {
         PageObject pageObject = new(Page);
 
@@ -30,40 +67,7 @@ public class WildberriesScrapper(
         Logger.LogInformation("Login requirement check completed");
         await TakeScreenshot("wildberries_login_requirement_check");
 
-        if (requiresLogin)
-        {
-            await TakeScreenshot("wildberries_begin_login");
-
-            await pageObject.OpenLoginForm();
-
-            Logger.LogInformation("Login form opened");
-            await TakeScreenshot("wildberries_login_form_opened");
-
-            Logger.LogInformation("Phone number requested");
-
-            var phoneNumber = await input.GetPhoneNumber();
-            await TakeScreenshot("wildberries_page_loaded_input_1");
-            await pageObject.EnterPhoneNumber(phoneNumber);
-
-            Logger.LogInformation("Phone number entered");
-            await TakeScreenshot("wildberries_phone_number_entered");
-
-            Logger.LogInformation("Submitting form...");
-
-            await pageObject.LoginSubmit();
-
-            Logger.LogInformation("Form submitted");
-            await TakeScreenshot("wildberries_form_submitted");
-            
-            Logger.LogInformation("Phone verification code requested");
-
-            var phoneVerificationCode = await input.GetPhoneVerificationCode();
-            await TakeScreenshot("wildberries_page_loaded_input_2");
-            await pageObject.EnterPhoneVerificationCode(phoneVerificationCode);
-
-            Logger.LogInformation("Phone verification code entered");
-            await TakeScreenshot("wildberries_phone_verification_code_entered");
-        }
+        return !requiresLogin;
     }
 
     protected override async Task<double> GetPriceCore()
