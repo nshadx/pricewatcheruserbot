@@ -10,10 +10,26 @@ public class MessageManager(
     SentMessageService sentMessageService
 )
 {
+    public async Task SetCurrentPriceDecreased(int workerItemId, double difference)
+    {
+        var messageId = sentMessageService.Delete(SentMessageType.PriceDropped, workerItemId);
+        if (messageId != -1)
+        {
+            await client.DeleteMessages(
+                peer: InputPeer.Self,
+                id: messageId
+            );
+        }
+
+        var name = workerItemService.GetName(workerItemId);
+        var newMessage = await messageSender.Send_PriceDropped(name, difference);
+        sentMessageService.Add(newMessage.id, SentMessageType.PriceDropped, workerItemId);
+    }
+    
     public async Task UpdateAllLists()
     {
         var names = workerItemService.GetNames();
-        var lists = sentMessageService.DeleteAll(SentMessageType.List);
+        var lists = sentMessageService.GetAll(SentMessageType.List);
         foreach (var messageId in lists)
         {
             await messageSender.Edit_WorkerItemList(names, messageId);

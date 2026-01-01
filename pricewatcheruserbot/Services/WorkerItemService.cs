@@ -11,6 +11,7 @@ public class WorkerItemService
     private readonly SqliteCommand _removeCommand;
     private readonly SqliteCommand _insertCommand;
     private readonly SqliteCommand _getNamesCommand;
+    private readonly SqliteCommand _getNameCommand;
     private readonly SqliteCommand _getAllCommand;
     private readonly SqliteCommand _getSmaCommand;
     private readonly SqliteCommand _updateSmaCommand;
@@ -28,7 +29,6 @@ public class WorkerItemService
                              )
                              """, connection);
         _insertCommand.Parameters.Add("@p1", SqliteType.Integer);
-        _insertCommand.Parameters.Add("@p2", SqliteType.Text);
         
         _removeCommand = new("""
                              BEGIN;
@@ -50,6 +50,13 @@ public class WorkerItemService
                               FROM worker_items
                               ORDER BY "order"
                               """, connection);
+        
+        _getNameCommand = new("""
+                               SELECT "order" || '.' || ' ' || url
+                               FROM worker_items
+                               WHERE id = @p1
+                               """, connection);
+        _getNameCommand.Parameters.Add("@p1", SqliteType.Integer);
         
         _getAllCommand = new("""
                               SELECT id, url, "order" || '.' || ' ' || url
@@ -90,6 +97,16 @@ public class WorkerItemService
         }
     }
 
+    public string GetName(int id)
+    {
+        _getNameCommand.Parameters["@p1"].Value = id;
+        using (var reader = _getNameCommand.ExecuteReader())
+        {
+            reader.Read();
+            return reader.GetString(0);
+        }
+    }
+    
     public IEnumerable<string> GetNames()
     {
         using (var reader = _getNamesCommand.ExecuteReader())

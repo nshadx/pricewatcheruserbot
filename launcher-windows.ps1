@@ -71,7 +71,7 @@ if (-not (Test-Path "appsettings.json")) {
   },
   "BrowserConfiguration": {
     "ScreenshotsDirectory": "screenshots",
-    "SessionFilePath": "browser-session"
+    "SessionDirectory": "browser-data"
   },
   "UserAgentConfiguration": {
     "FetchUrls": [

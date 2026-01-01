@@ -17,8 +17,9 @@ public class WorkerItemTracker(
         {
             if (sma.TryGetLatestValue(out var value))
             {
-                isPriceDecreased = currentPrice < value;
+                var minimalDifference = GetPercentOf(value, 0.3);
                 difference = sma.Previous - currentPrice;
+                isPriceDecreased = difference > minimalDifference;
             }
         }
         else
@@ -26,10 +27,12 @@ public class WorkerItemTracker(
             sma = new(_windowSize);
         }
         
-        sma.Update((int)currentPrice);
+        sma.Update(currentPrice);
 
         workerItemService.UpdateSma(id, sma);
         
         return isPriceDecreased;
     }
+    
+    private double GetPercentOf(double value, double percent) => value / 100 * percent;
 }

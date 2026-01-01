@@ -12,7 +12,7 @@ public class ConsumerWorker(
     ChannelReader<WorkerItem> globalChannel,
     ScrapperProvider scrapperProvider,
     WorkerItemTracker workerItemTracker,
-    MessageSender messageSender
+    MessageManager messageManager
 ) : BackgroundService
 {
     private readonly Channel<(ScrapperBase Scrapper, WorkerItem Item)> _ozonChannel = Channel.CreateBounded<(ScrapperBase Scrapper, WorkerItem Item)>(1);
@@ -75,7 +75,7 @@ public class ConsumerWorker(
 
                 if (workerItemTracker.IsPriceDecreased(item.Id, price, out var difference))
                 {
-                    await messageSender.Send_PriceDropped(item.Name, difference);
+                    await messageManager.SetCurrentPriceDecreased(item.Id, difference);
                     logger.LogInformation("Price dropped by {difference} for {id}", difference, item.Id);
                 }
             }

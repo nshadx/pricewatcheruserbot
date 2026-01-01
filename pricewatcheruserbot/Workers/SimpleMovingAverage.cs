@@ -4,24 +4,24 @@ public class SimpleMovingAverageState
 {
     public int K { get; set; }
     public int CurrentK { get; set; }
-    public int[] Values { get; set; } = [];
+    public double[] Values { get; set; } = [];
     public int Index { get; set; }
-    public int Sum { get; set; }
+    public double Sum { get; set; }
     public double Sma { get; set; }
-    public int Previous { get; set; }
+    public double Previous { get; set; }
 }
 
 public class SimpleMovingAverage
 {
     private readonly int _k;
-    private readonly int[] _values;
+    private readonly double[] _values;
 
     private int _index;
-    private int _sum;
+    private double _sum;
     private int _currentK;
     private double _sma;
 
-    public int Previous { get; private set; }
+    public double Previous { get; private set; }
     
     public bool TryGetLatestValue(out double value)
     {
@@ -41,7 +41,7 @@ public class SimpleMovingAverage
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(k);
 
         _k = k;
-        _values = new int[_k];
+        _values = new double[_k];
     }
 
     public SimpleMovingAverage(SimpleMovingAverageState state)
@@ -55,7 +55,7 @@ public class SimpleMovingAverage
         Previous = state.Previous;
     }
     
-    public void Update(int nextInput)
+    public void Update(double nextInput)
     {
         if (_currentK < _k)
         {
@@ -70,7 +70,7 @@ public class SimpleMovingAverage
         
         _index = (_index + 1) % _k;
 
-        _sma = (double)_sum / _k;
+        _sma = _sum / _k;
     }
 
     public SimpleMovingAverageState Save()

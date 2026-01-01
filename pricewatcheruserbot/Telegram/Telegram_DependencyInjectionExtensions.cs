@@ -10,7 +10,7 @@ public static class Telegram_DependencyInjectionExtensions
         public IHostApplicationBuilder AddMessageServices()
         {
             builder.Services.AddSingleton<MessageSender>();
-            builder.Services.AddScoped<MessageManager>();
+            builder.Services.AddSingleton<MessageManager>();
 
             return builder;
         }

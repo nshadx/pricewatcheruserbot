@@ -10,14 +10,16 @@ public class ScrapperService(
     {
         foreach (var scrapper in scrappers)
         {
-            if (await scrapper.IsAuthorized() || !await input.HasAccount(scrapper.BaseUrl))
-            {
-                continue;
-            }
-            
             try
             {
-                logger.LogInformation("Begin login for {host}...", scrapper.BaseUrl);
+                if (await scrapper.IsAuthorized() || !await input.HasAccount(scrapper.BaseUrl))
+                {
+                    logger.LogInformation("{baseUrl} is authorized or skipped", scrapper.BaseUrl);
+                    
+                    continue;
+                }
+                
+                logger.LogInformation("Begin login for {baseUrl}...", scrapper.BaseUrl);
 
                 await scrapper.Authorize();
 
@@ -25,7 +27,7 @@ public class ScrapperService(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed login for {host}", scrapper.BaseUrl);
+                logger.LogError(ex, "Failed login for {baseUrl}", scrapper.BaseUrl);
             }
         }
     }

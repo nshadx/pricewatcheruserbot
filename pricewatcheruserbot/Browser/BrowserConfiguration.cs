@@ -3,5 +3,5 @@
 public class BrowserConfiguration
 {
     public string ScreenshotsDirectory { get; set; } = null!;
-    public string SessionFilePath { get; set; } = null!;
+    public string SessionDirectory { get; set; } = null!;
 }

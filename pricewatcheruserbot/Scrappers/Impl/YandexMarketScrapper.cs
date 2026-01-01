@@ -54,6 +54,7 @@ public class YandexMarketScrapper(
         var account = await input.GetAccount(suggestedAccounts);
 
         await pageObject.SelectAccount(account);
+        await pageObject.WaitForLoginCompleted();
     }
 
     protected override async Task<bool> IsAuthorizedCore()
@@ -123,6 +124,8 @@ public class YandexMarketScrapper(
         public async Task<IReadOnlyCollection<string>> GetSuggestedAccounts()
         {
             var locator = page.Locator("//div[contains(@class, 'Suggest-account-list')]/descendant::div[contains(@class, 'UserLogin-info')]");
+
+            await locator.First.WaitForAsync();
             
             return await locator.AllInnerTextsAsync();
         }
@@ -165,6 +168,13 @@ public class YandexMarketScrapper(
                 .Locator("//div[contains(@id, 'USER_MENU_ANCHOR')]/descendant::a[contains(text(), 'Войти')]");
 
             await locator.ClickAsync();
+        }
+
+        public async Task WaitForLoginCompleted()
+        {
+            var locator = page.Locator("//button[contains(@aria-controls, 'userMenu')]");
+
+            await locator.WaitForAsync();
         }
         
         public async Task<bool> RequiresLogin()

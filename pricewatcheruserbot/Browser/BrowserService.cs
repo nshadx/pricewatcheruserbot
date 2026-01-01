@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 
@@ -13,7 +14,8 @@ public class BrowserService : IAsyncDisposable, IDisposable
     
     private readonly SemaphoreSlim _semaphore;
     private readonly IReadOnlyCollection<IPatcher> _patchers;
-    private readonly BrowserConfiguration _configuration;
+    private readonly string _localStorageFilePath;
+    private readonly string _cookiesFilePath;
     
     public BrowserService(
         IEnumerable<IPatcher> patchers,
@@ -21,8 +23,11 @@ public class BrowserService : IAsyncDisposable, IDisposable
     )
     {
         _patchers = patchers.ToArray();
-        _configuration = configuration.Value;
         _semaphore = new(1);
+
+        Directory.CreateDirectory(configuration.Value.SessionDirectory);
+        _localStorageFilePath = Path.Combine(configuration.Value.SessionDirectory, "local-storage.json");
+        _cookiesFilePath = Path.Combine(configuration.Value.SessionDirectory, "cookies.json");
     }
 
     public async Task SaveState()
@@ -31,7 +36,11 @@ public class BrowserService : IAsyncDisposable, IDisposable
 
         await _semaphore.WaitAsync();
         
-        await _browserContext.StorageStateAsync(new BrowserContextStorageStateOptions() { Path = _configuration.SessionFilePath });
+        await _browserContext.StorageStateAsync(new BrowserContextStorageStateOptions() { Path = _localStorageFilePath });
+        
+        var cookies = await _browserContext.CookiesAsync();
+        var json = JsonSerializer.Serialize(cookies);
+        await File.WriteAllTextAsync(_cookiesFilePath, json);
 
         _semaphore.Release();
     }
@@ -79,8 +88,10 @@ public class BrowserService : IAsyncDisposable, IDisposable
         {
             BrowserNewContextOptions options = new();
 
-            if (File.Exists(_configuration.SessionFilePath))
-                options.StorageStatePath = _configuration.SessionFilePath;
+            if (File.Exists(_localStorageFilePath))
+            {
+                options.StorageStatePath = _localStorageFilePath;
+            }
 
             foreach (var patcher in _patchers)
             {
@@ -89,6 +100,18 @@ public class BrowserService : IAsyncDisposable, IDisposable
             
             _browserContext = await _browser.NewContextAsync(options);
             _roundCount = 0;
+            
+            if (File.Exists(_cookiesFilePath))
+            {
+                using (var stream = File.OpenRead(_cookiesFilePath))
+                {
+                    var cookies = JsonSerializer.Deserialize<IEnumerable<Cookie>>(stream);
+                    if (cookies is not null)
+                    {
+                        await _browserContext.AddCookiesAsync(cookies);
+                    }
+                }
+            }
         }
 
         _semaphore.Release();

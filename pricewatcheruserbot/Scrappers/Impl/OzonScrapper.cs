@@ -80,8 +80,7 @@ public class OzonScrapper(
             await TakeScreenshot("ozon_email_verification_code_entered");
         }
 
-        Logger.LogInformation("Successful authorization");
-        await TakeScreenshot("ozon_successful_authorization");
+        await pageObject.WaitForLoginCompleted();
     }
 
     protected override async Task<bool> IsAuthorizedCore()
@@ -198,6 +197,13 @@ public class OzonScrapper(
         //
         //     return await locator.IsVisibleAsync();
         // }
+
+        public async Task WaitForLoginCompleted()
+        {
+            var locator = page.Locator("//div[contains(@data-widget, 'profileLogo')]");
+
+            await locator.WaitForAsync();
+        }
 
         public async Task<bool> RequiresLogin()
         {

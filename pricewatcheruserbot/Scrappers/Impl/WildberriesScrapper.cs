@@ -48,6 +48,8 @@ public class WildberriesScrapper(
 
         Logger.LogInformation("Phone verification code entered");
         await TakeScreenshot("wildberries_phone_verification_code_entered");
+
+        await pageObject.WaitForLoginCompleted();
     }
 
     protected override async Task<bool> IsAuthorizedCore()
@@ -92,15 +94,18 @@ public class WildberriesScrapper(
             var locator = page
                 .Locator("//div[contains(@class, 'popupContent')]").First;
 
-            var boundingBox = await locator.BoundingBoxAsync();
-            
-            if (boundingBox is not null)
+            if (await locator.IsVisibleAsync())
             {
-                const int offset = 100;
-                var leftX = boundingBox.X - boundingBox.Width / 2 - offset;
-                var leftY = boundingBox.Y;
+                var boundingBox = await locator.BoundingBoxAsync();
             
-                await page.Mouse.ClickAsync(leftX, leftY);
+                if (boundingBox is not null)
+                {
+                    const int offset = 100;
+                    var leftX = boundingBox.X - boundingBox.Width / 2 - offset;
+                    var leftY = boundingBox.Y;
+            
+                    await page.Mouse.ClickAsync(leftX, leftY);
+                }   
             }
         }
         
@@ -134,6 +139,13 @@ public class WildberriesScrapper(
                 .Locator("//a[contains(@data-wba-header-name, 'Login')]/descendant::p[contains(text(), 'Войти')]/..");
 
             await locator.ClickAsync();
+        }
+
+        public async Task WaitForLoginCompleted()
+        {
+            var locator = page.Locator("//a[contains(@data-wba-header-name, 'LK')]");
+
+            await locator.WaitForAsync();
         }
         
         public async Task<bool> RequiresLogin()

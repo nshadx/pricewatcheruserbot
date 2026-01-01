@@ -4,6 +4,7 @@ using pricewatcheruserbot.Browser;
 
 namespace pricewatcheruserbot.Scrappers;
 
+//todo: request for captcha solving
 public abstract class ScrapperBase
 {
     protected ScrapperBase(
@@ -63,7 +64,7 @@ public abstract class ScrapperBase
 
     public async Task<double> GetPrice(string url)
     {
-        if (IsUrlBelongsHost(url))
+        if (!IsUrlBelongsHost(url))
         {
             throw new InvalidOperationException("Unsupported url");
         }
@@ -107,5 +108,5 @@ public abstract class ScrapperBase
     protected abstract Task<bool> IsAuthorizedCore();
     protected abstract Task<double> GetPriceCore();
     
-    private bool IsUrlBelongsHost(string url) => new Uri(url).Host.Replace("www", string.Empty) == new Uri(BaseUrl).Host.Replace("www", string.Empty);
+    private bool IsUrlBelongsHost(string url) => new Uri(url).Host.Replace("www.", string.Empty) == new Uri(BaseUrl).Host.Replace("www.", string.Empty);
 }

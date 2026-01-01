@@ -10,7 +10,8 @@ public class InitialMigration : Migration
         Create.Table("sent_messages")
             .WithColumn("id").AsInt32().Identity().PrimaryKey()
             .WithColumn("message_id").AsInt32().NotNullable()
-            .WithColumn("type").AsInt32().NotNullable();
+            .WithColumn("type").AsInt32().NotNullable()
+            .WithColumn("worker_item_id").AsInt32().ForeignKey("worker_items", "id").Nullable();
         Create.Table("worker_items")
             .WithColumn("id").AsInt32().Identity().PrimaryKey()
             .WithColumn("order").AsInt32().NotNullable()
